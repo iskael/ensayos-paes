@@ -1,0 +1,20 @@
+-- 0001_init.down.sql
+
+DROP TABLE IF EXISTS ensayo_items;
+DROP TABLE IF EXISTS ensayos;
+DROP TABLE IF EXISTS alternativas;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS examenes_fuente;
+DROP TABLE IF EXISTS grupo_miembros;
+DROP TABLE IF EXISTS grupos;
+DROP TABLE IF EXISTS usuarios;
+
+DROP TYPE IF EXISTS estado_ensayo;
+DROP TYPE IF EXISTS etiqueta_alt;
+DROP TYPE IF EXISTS tipo_examen;
+DROP TYPE IF EXISTS estado_item;
+DROP TYPE IF EXISTS origen_item;
+DROP TYPE IF EXISTS dificultad;
+DROP TYPE IF EXISTS eje;
+DROP TYPE IF EXISTS nivel;
+DROP TYPE IF EXISTS rol;

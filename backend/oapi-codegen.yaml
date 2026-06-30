@@ -1,0 +1,10 @@
+# Config para oapi-codegen (genera tipos y stubs del servidor desde el contrato).
+# Uso:
+#   go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen -config oapi-codegen.yaml ../docs/openapi.yaml
+package: api
+output: internal/http/api.gen.go
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true
+  embedded-spec: true

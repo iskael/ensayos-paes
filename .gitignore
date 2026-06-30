@@ -1,0 +1,30 @@
+# Go
+/backend/bin/
+*.test
+*.out
+coverage.*
+
+# Node / frontend
+node_modules/
+/frontend/dist/
+.vite/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Prototipo IA (salidas)
+/prototipo-ia/preguntas_generadas.json
+/prototipo-ia/reporte_calidad.txt
+
+# Entorno / secretos
+.env
+.env.*
+*.local
+
+# Sistema / editores
+.DS_Store
+.idea/
+.vscode/

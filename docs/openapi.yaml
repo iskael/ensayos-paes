@@ -1,0 +1,1132 @@
+openapi: 3.0.3
+info:
+  title: API Ensayos PAES Matemáticas
+  version: 0.1.0
+  description: >
+    Contrato del MVP. Plataforma de ensayos PAES de matemáticas (M1/M2) con banco
+    de ítems oficiales, puntaje en escala 1000 (normalizado en ensayos mixtos),
+    dashboard del estudiante, administración del banco y grupos del profesor.
+    El control de acceso por rol (estudiante/profesor/admin) se aplica en el
+    servidor; en cada operación se indica el rol requerido.
+
+servers:
+  - url: /api/v1
+
+tags:
+  - name: Auth
+    description: Registro, sesión y perfil.
+  - name: Ensayos
+    description: Configuración, ejecución y resultados de ensayos (rol estudiante).
+  - name: Dashboard
+    description: Progreso del estudiante.
+  - name: Banco
+    description: Administración del banco de preguntas (rol admin).
+  - name: Grupos
+    description: Grupos y seguimiento docente (rol profesor; unión por código para estudiante).
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ---------------- Auth ----------------
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Registrar un usuario (estudiante o profesor)
+      description: El rol admin se provisiona por gestión interna, no por este endpoint.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegistroRequest' }
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+        '422': { $ref: '#/components/responses/ValidacionFallida' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Iniciar sesión
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Cerrar sesión
+      responses:
+        '204': { description: Sesión cerrada }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+
+  /me:
+    get:
+      tags: [Auth]
+      operationId: getMe
+      summary: Perfil del usuario autenticado
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+
+  /ejes:
+    get:
+      tags: [Auth]
+      operationId: listarEjes
+      summary: Catálogo de ejes temáticos
+      responses:
+        '200':
+          description: Lista de ejes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Eje' }
+
+  # ---------------- Ensayos (estudiante) ----------------
+  /ensayos:
+    post:
+      tags: [Ensayos]
+      operationId: crearEnsayo
+      summary: Generar un ensayo aleatorio
+      description: >
+        Rol estudiante. Selecciona ítems publicados del nivel y ejes elegidos,
+        sin repetir, con distribución equitativa por eje. Si no hay ítems
+        suficientes devuelve 422 indicando el máximo disponible (no arma ensayos
+        parciales).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CrearEnsayoRequest' }
+      responses:
+        '201':
+          description: Ensayo generado (en progreso, sin respuestas correctas)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ensayo' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '422':
+          description: Datos inválidos o stock insuficiente
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/ErrorStockInsuficiente'
+    get:
+      tags: [Ensayos]
+      operationId: listarEnsayos
+      summary: Historial de ensayos del estudiante
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Lista de ensayos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EnsayoResumen' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+
+  /ensayos/{ensayoId}:
+    parameters:
+      - { $ref: '#/components/parameters/EnsayoId' }
+    get:
+      tags: [Ensayos]
+      operationId: obtenerEnsayo
+      summary: Detalle de un ensayo
+      description: En progreso, las preguntas no incluyen la respuesta correcta.
+      responses:
+        '200':
+          description: Ensayo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ensayo' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /ensayos/{ensayoId}/respuestas:
+    parameters:
+      - { $ref: '#/components/parameters/EnsayoId' }
+    patch:
+      tags: [Ensayos]
+      operationId: guardarRespuestas
+      summary: Guardar respuestas (progreso)
+      description: Solo si el ensayo está en progreso.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GuardarRespuestasRequest' }
+      responses:
+        '204': { description: Respuestas guardadas }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409':
+          description: El ensayo ya fue finalizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ensayos/{ensayoId}/enviar:
+    parameters:
+      - { $ref: '#/components/parameters/EnsayoId' }
+    post:
+      tags: [Ensayos]
+      operationId: enviarEnsayo
+      summary: Finalizar y corregir el ensayo
+      responses:
+        '200':
+          description: Resultado del ensayo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Resultado' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409':
+          description: El ensayo ya fue finalizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ensayos/{ensayoId}/resultado:
+    parameters:
+      - { $ref: '#/components/parameters/EnsayoId' }
+    get:
+      tags: [Ensayos]
+      operationId: obtenerResultado
+      summary: Resultado y revisión de un ensayo finalizado
+      responses:
+        '200':
+          description: Resultado con revisión por ítem
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Resultado' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409':
+          description: El ensayo aún no se finaliza
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ---------------- Dashboard (estudiante) ----------------
+  /dashboard/resumen:
+    get:
+      tags: [Dashboard]
+      operationId: dashboardResumen
+      summary: Resumen de progreso del estudiante
+      responses:
+        '200':
+          description: Resumen
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardResumen' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+
+  /dashboard/evolucion:
+    get:
+      tags: [Dashboard]
+      operationId: dashboardEvolucion
+      summary: Evolución de puntaje en el tiempo
+      responses:
+        '200':
+          description: Serie de puntajes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PuntoEvolucion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+
+  # ---------------- Banco (admin) ----------------
+  /examenes:
+    post:
+      tags: [Banco]
+      operationId: crearExamen
+      summary: Registrar un examen fuente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExamenInput' }
+      responses:
+        '201':
+          description: Examen creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExamenFuente' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '422': { $ref: '#/components/responses/ValidacionFallida' }
+    get:
+      tags: [Banco]
+      operationId: listarExamenes
+      summary: Listar exámenes fuente
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Lista de exámenes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExamenFuente' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
+  /examenes/{examenId}:
+    parameters:
+      - { $ref: '#/components/parameters/ExamenId' }
+    get:
+      tags: [Banco]
+      operationId: obtenerExamen
+      summary: Detalle de un examen
+      responses:
+        '200':
+          description: Examen
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExamenFuente' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Banco]
+      operationId: actualizarExamen
+      summary: Actualizar un examen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExamenInput' }
+      responses:
+        '200':
+          description: Examen actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExamenFuente' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    delete:
+      tags: [Banco]
+      operationId: eliminarExamen
+      summary: Eliminar un examen
+      responses:
+        '204': { description: Examen eliminado }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /examenes/{examenId}/clave:
+    parameters:
+      - { $ref: '#/components/parameters/ExamenId' }
+    get:
+      tags: [Banco]
+      operationId: obtenerClave
+      summary: Obtener la clave de corrección (pesos por ítem)
+      responses:
+        '200':
+          description: Clave
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Clave' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Banco]
+      operationId: definirClave
+      summary: Definir/cargar la clave de corrección
+      description: >
+        Asigna el peso de cada ítem del examen. Valida que la suma de pesos de
+        los ítems publicados del examen sea 1000; si no, devuelve 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClaveInput' }
+      responses:
+        '200':
+          description: Clave guardada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Clave' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '422':
+          description: Los pesos no suman 1000 u otra validación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /examenes/{examenId}/importacion-pdf:
+    parameters:
+      - { $ref: '#/components/parameters/ExamenId' }
+    post:
+      tags: [Banco]
+      operationId: importarPdf
+      summary: Subir PDF y extraer preguntas (asistido)
+      description: >
+        Extrae preguntas del PDF y las crea como ítems en estado 'borrador'.
+        Toda pregunta extraída requiere revisión/edición humana antes de publicarse.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [archivo]
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Ítems borrador creados a partir del PDF
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Item' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '422': { $ref: '#/components/responses/ValidacionFallida' }
+
+  /items:
+    post:
+      tags: [Banco]
+      operationId: crearItem
+      summary: Crear un ítem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ItemInput' }
+      responses:
+        '201':
+          description: Ítem creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '422': { $ref: '#/components/responses/ValidacionFallida' }
+    get:
+      tags: [Banco]
+      operationId: listarItems
+      summary: Listar/filtrar ítems
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - name: nivel
+          in: query
+          schema: { $ref: '#/components/schemas/Nivel' }
+        - name: eje
+          in: query
+          schema: { $ref: '#/components/schemas/Eje' }
+        - name: dificultad
+          in: query
+          schema: { $ref: '#/components/schemas/Dificultad' }
+        - name: estado
+          in: query
+          schema: { $ref: '#/components/schemas/EstadoItem' }
+        - name: examenId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Lista de ítems
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Item' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
+  /items/{itemId}:
+    parameters:
+      - { $ref: '#/components/parameters/ItemId' }
+    get:
+      tags: [Banco]
+      operationId: obtenerItem
+      summary: Detalle de un ítem
+      responses:
+        '200':
+          description: Ítem
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Banco]
+      operationId: actualizarItem
+      summary: Actualizar un ítem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ItemInput' }
+      responses:
+        '200':
+          description: Ítem actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '422': { $ref: '#/components/responses/ValidacionFallida' }
+    delete:
+      tags: [Banco]
+      operationId: eliminarItem
+      summary: Eliminar un ítem
+      responses:
+        '204': { description: Ítem eliminado }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /items/{itemId}/publicar:
+    parameters:
+      - { $ref: '#/components/parameters/ItemId' }
+    post:
+      tags: [Banco]
+      operationId: publicarItem
+      summary: Publicar un ítem (queda disponible para ensayos)
+      responses:
+        '200':
+          description: Ítem publicado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '422':
+          description: El ítem está incompleto (p. ej. sin peso o sin alternativa correcta)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /items/{itemId}/ocultar:
+    parameters:
+      - { $ref: '#/components/parameters/ItemId' }
+    post:
+      tags: [Banco]
+      operationId: ocultarItem
+      summary: Ocultar un ítem (deja de usarse en ensayos)
+      responses:
+        '200':
+          description: Ítem oculto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /imagenes:
+    post:
+      tags: [Banco]
+      operationId: subirImagen
+      summary: Subir una imagen (figura de un ítem o alternativa)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [archivo]
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Imagen subida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, format: uri }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
+  # ---------------- Grupos ----------------
+  /grupos:
+    post:
+      tags: [Grupos]
+      operationId: crearGrupo
+      summary: Crear un grupo (rol profesor)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GrupoInput' }
+      responses:
+        '201':
+          description: Grupo creado (incluye código de invitación)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Grupo' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+    get:
+      tags: [Grupos]
+      operationId: listarGrupos
+      summary: Listar los grupos del profesor
+      responses:
+        '200':
+          description: Lista de grupos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Grupo' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
+  /grupos/unirse:
+    post:
+      tags: [Grupos]
+      operationId: unirseAGrupo
+      summary: Unirse a un grupo por código (rol estudiante)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UnirseGrupoRequest' }
+      responses:
+        '200':
+          description: Inscripción exitosa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Grupo' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404':
+          description: Código inválido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /grupos/{grupoId}:
+    parameters:
+      - { $ref: '#/components/parameters/GrupoId' }
+    get:
+      tags: [Grupos]
+      operationId: obtenerGrupo
+      summary: Detalle del grupo con progreso agregado (rol profesor dueño)
+      responses:
+        '200':
+          description: Detalle del grupo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrupoDetalle' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /grupos/{grupoId}/miembros:
+    parameters:
+      - { $ref: '#/components/parameters/GrupoId' }
+    get:
+      tags: [Grupos]
+      operationId: listarMiembros
+      summary: Listar estudiantes del grupo
+      responses:
+        '200':
+          description: Miembros
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MiembroGrupo' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /grupos/{grupoId}/estudiantes/{estudianteId}:
+    parameters:
+      - { $ref: '#/components/parameters/GrupoId' }
+      - name: estudianteId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Grupos]
+      operationId: progresoEstudiante
+      summary: Progreso individual de un estudiante del grupo
+      responses:
+        '200':
+          description: Progreso del estudiante
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProgresoEstudiante' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Offset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    EnsayoId:
+      name: ensayoId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExamenId:
+      name: examenId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    GrupoId:
+      name: grupoId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    NoAutorizado:
+      description: No autenticado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Prohibido:
+      description: El rol no tiene permiso para esta acción
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NoEncontrado:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflicto:
+      description: Conflicto (p. ej. email ya registrado)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidacionFallida:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    # ---- Enums ----
+    Rol:
+      type: string
+      enum: [estudiante, profesor, admin]
+    Nivel:
+      type: string
+      enum: [M1, M2]
+    Eje:
+      type: string
+      enum: [numeros, algebra_funciones, geometria, probabilidad_estadistica]
+    Dificultad:
+      type: string
+      enum: [baja, media, alta]
+    OrigenItem:
+      type: string
+      enum: [oficial, generado]
+    EstadoItem:
+      type: string
+      enum: [borrador, publicado, oculto]
+    TipoExamen:
+      type: string
+      enum: [PAES_Regular, PAES_Invierno, PDT]
+    EtiquetaAlternativa:
+      type: string
+      enum: [A, B, C, D]
+    ModoEnsayo:
+      type: string
+      enum: [libre]
+      description: 'cronometrado se incorpora en v2'
+    EstadoEnsayo:
+      type: string
+      enum: [en_progreso, finalizado]
+    CantidadEnsayo:
+      type: integer
+      enum: [10, 20, 30]
+
+    # ---- Auth ----
+    RegistroRequest:
+      type: object
+      required: [nombre, email, password, rol]
+      properties:
+        nombre: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password, minLength: 8 }
+        rol:
+          type: string
+          enum: [estudiante, profesor]
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    TokenResponse:
+      type: object
+      properties:
+        token: { type: string }
+        usuario: { $ref: '#/components/schemas/Usuario' }
+    Usuario:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        email: { type: string, format: email }
+        rol: { $ref: '#/components/schemas/Rol' }
+        fecha_creacion: { type: string, format: date-time }
+
+    # ---- Banco: examen, clave ----
+    ExamenInput:
+      type: object
+      required: [nombre, anio_admision, tipo, nivel]
+      properties:
+        nombre: { type: string }
+        anio_admision: { type: integer, example: 2026 }
+        tipo: { $ref: '#/components/schemas/TipoExamen' }
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        edicion: { type: string, nullable: true }
+        url_pdf: { type: string, format: uri, nullable: true }
+        fecha_publicacion: { type: string, format: date, nullable: true }
+    ExamenFuente:
+      allOf:
+        - $ref: '#/components/schemas/ExamenInput'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+    ClaveItemInput:
+      type: object
+      required: [item_id, peso]
+      properties:
+        item_id: { type: string, format: uuid }
+        peso: { type: integer, minimum: 0 }
+    ClaveInput:
+      type: object
+      required: [pesos]
+      properties:
+        pesos:
+          type: array
+          items: { $ref: '#/components/schemas/ClaveItemInput' }
+    Clave:
+      type: object
+      properties:
+        examen_id: { type: string, format: uuid }
+        suma_pesos: { type: integer, example: 1000 }
+        valida: { type: boolean, description: 'true si la suma de pesos publicados es 1000' }
+        pesos:
+          type: array
+          items: { $ref: '#/components/schemas/ClaveItemInput' }
+
+    # ---- Banco: ítem y alternativas ----
+    AlternativaInput:
+      type: object
+      required: [etiqueta, texto, es_correcta]
+      properties:
+        etiqueta: { $ref: '#/components/schemas/EtiquetaAlternativa' }
+        texto: { type: string, description: 'soporta LaTeX' }
+        imagen_url: { type: string, format: uri, nullable: true }
+        es_correcta: { type: boolean }
+    Alternativa:
+      allOf:
+        - $ref: '#/components/schemas/AlternativaInput'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+    ItemInput:
+      type: object
+      required: [enunciado, eje, nivel, dificultad, alternativas]
+      properties:
+        examen_fuente_id: { type: string, format: uuid, nullable: true }
+        enunciado: { type: string, description: 'soporta LaTeX' }
+        imagen_url: { type: string, format: uri, nullable: true }
+        eje: { $ref: '#/components/schemas/Eje' }
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        dificultad: { $ref: '#/components/schemas/Dificultad' }
+        peso: { type: integer, minimum: 0, nullable: true }
+        explicacion: { type: string, nullable: true }
+        alternativas:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items: { $ref: '#/components/schemas/AlternativaInput' }
+    Item:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        examen_fuente_id: { type: string, format: uuid, nullable: true }
+        enunciado: { type: string }
+        imagen_url: { type: string, format: uri, nullable: true }
+        eje: { $ref: '#/components/schemas/Eje' }
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        dificultad: { $ref: '#/components/schemas/Dificultad' }
+        origen: { $ref: '#/components/schemas/OrigenItem' }
+        estado: { $ref: '#/components/schemas/EstadoItem' }
+        peso: { type: integer, nullable: true }
+        explicacion: { type: string, nullable: true }
+        alternativas:
+          type: array
+          items: { $ref: '#/components/schemas/Alternativa' }
+        fecha_creacion: { type: string, format: date-time }
+
+    # ---- Ensayos ----
+    CrearEnsayoRequest:
+      type: object
+      required: [nivel, ejes, cantidad]
+      properties:
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        ejes:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Eje' }
+        cantidad: { $ref: '#/components/schemas/CantidadEnsayo' }
+        modo: { $ref: '#/components/schemas/ModoEnsayo' }
+    PreguntaEnsayo:
+      description: Ítem visible para el estudiante (sin la respuesta correcta).
+      type: object
+      properties:
+        ensayo_item_id: { type: string, format: uuid }
+        orden: { type: integer }
+        enunciado: { type: string }
+        imagen_url: { type: string, format: uri, nullable: true }
+        eje: { $ref: '#/components/schemas/Eje' }
+        alternativas:
+          type: array
+          items:
+            type: object
+            properties:
+              etiqueta: { $ref: '#/components/schemas/EtiquetaAlternativa' }
+              texto: { type: string }
+              imagen_url: { type: string, format: uri, nullable: true }
+        respuesta_seleccionada:
+          allOf: [{ $ref: '#/components/schemas/EtiquetaAlternativa' }]
+          nullable: true
+    Ensayo:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        ejes:
+          type: array
+          items: { $ref: '#/components/schemas/Eje' }
+        cantidad: { $ref: '#/components/schemas/CantidadEnsayo' }
+        modo: { $ref: '#/components/schemas/ModoEnsayo' }
+        estado: { $ref: '#/components/schemas/EstadoEnsayo' }
+        fecha_inicio: { type: string, format: date-time }
+        fecha_fin: { type: string, format: date-time, nullable: true }
+        preguntas:
+          type: array
+          items: { $ref: '#/components/schemas/PreguntaEnsayo' }
+    EnsayoResumen:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        ejes:
+          type: array
+          items: { $ref: '#/components/schemas/Eje' }
+        estado: { $ref: '#/components/schemas/EstadoEnsayo' }
+        puntaje: { type: integer, minimum: 0, maximum: 1000, nullable: true }
+        fecha_fin: { type: string, format: date-time, nullable: true }
+    RespuestaInput:
+      type: object
+      required: [ensayo_item_id, respuesta_seleccionada]
+      properties:
+        ensayo_item_id: { type: string, format: uuid }
+        respuesta_seleccionada: { $ref: '#/components/schemas/EtiquetaAlternativa' }
+    GuardarRespuestasRequest:
+      type: object
+      required: [respuestas]
+      properties:
+        respuestas:
+          type: array
+          items: { $ref: '#/components/schemas/RespuestaInput' }
+
+    # ---- Resultado ----
+    DesgloseEje:
+      type: object
+      properties:
+        eje: { $ref: '#/components/schemas/Eje' }
+        correctas: { type: integer }
+        total: { type: integer }
+        puntos_obtenidos: { type: integer }
+        puntos_posibles: { type: integer }
+    RevisionItem:
+      type: object
+      properties:
+        orden: { type: integer }
+        enunciado: { type: string }
+        eje: { $ref: '#/components/schemas/Eje' }
+        respuesta_seleccionada:
+          allOf: [{ $ref: '#/components/schemas/EtiquetaAlternativa' }]
+          nullable: true
+        respuesta_correcta: { $ref: '#/components/schemas/EtiquetaAlternativa' }
+        es_correcta: { type: boolean }
+        peso: { type: integer }
+        explicacion: { type: string, nullable: true }
+        alternativas:
+          type: array
+          items: { $ref: '#/components/schemas/Alternativa' }
+    Resultado:
+      type: object
+      properties:
+        ensayo_id: { type: string, format: uuid }
+        puntaje:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          description: 'round((puntos_obtenidos / puntos_posibles) * 1000)'
+        correctas: { type: integer }
+        total: { type: integer }
+        puntos_obtenidos: { type: integer }
+        puntos_posibles: { type: integer }
+        desglose_por_eje:
+          type: array
+          items: { $ref: '#/components/schemas/DesgloseEje' }
+        revision:
+          type: array
+          items: { $ref: '#/components/schemas/RevisionItem' }
+
+    # ---- Dashboard ----
+    DashboardResumen:
+      type: object
+      properties:
+        total_ensayos: { type: integer }
+        ultimo_puntaje: { type: integer, nullable: true }
+        promedio_puntaje: { type: number, nullable: true }
+        mejor_puntaje: { type: integer, nullable: true }
+        desempeno_por_eje:
+          type: array
+          items: { $ref: '#/components/schemas/DesgloseEje' }
+    PuntoEvolucion:
+      type: object
+      properties:
+        fecha: { type: string, format: date-time }
+        puntaje: { type: integer, minimum: 0, maximum: 1000 }
+
+    # ---- Grupos ----
+    GrupoInput:
+      type: object
+      required: [nombre]
+      properties:
+        nombre: { type: string }
+    Grupo:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        codigo_invitacion: { type: string }
+        profesor_id: { type: string, format: uuid }
+        fecha_creacion: { type: string, format: date-time }
+    UnirseGrupoRequest:
+      type: object
+      required: [codigo]
+      properties:
+        codigo: { type: string }
+    MiembroGrupo:
+      type: object
+      properties:
+        estudiante_id: { type: string, format: uuid }
+        nombre: { type: string }
+        fecha_union: { type: string, format: date-time }
+        total_ensayos: { type: integer }
+        ultimo_puntaje: { type: integer, nullable: true }
+    GrupoDetalle:
+      allOf:
+        - $ref: '#/components/schemas/Grupo'
+        - type: object
+          properties:
+            cantidad_miembros: { type: integer }
+            promedio_grupo: { type: number, nullable: true }
+            desempeno_por_eje:
+              type: array
+              items: { $ref: '#/components/schemas/DesgloseEje' }
+    ProgresoEstudiante:
+      type: object
+      properties:
+        estudiante: { $ref: '#/components/schemas/MiembroGrupo' }
+        evolucion:
+          type: array
+          items: { $ref: '#/components/schemas/PuntoEvolucion' }
+        desempeno_por_eje:
+          type: array
+          items: { $ref: '#/components/schemas/DesgloseEje' }
+
+    # ---- Errores ----
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje: { type: string }
+    ErrorStockInsuficiente:
+      type: object
+      required: [codigo, mensaje, max_disponible]
+      properties:
+        codigo: { type: string, example: STOCK_INSUFICIENTE }
+        mensaje: { type: string }
+        max_disponible:
+          type: integer
+          description: 'Máximo de preguntas que se pueden generar con los filtros dados'
+        disponibles_por_eje:
+          type: array
+          items:
+            type: object
+            properties:
+              eje: { $ref: '#/components/schemas/Eje' }
+              disponibles: { type: integer }
