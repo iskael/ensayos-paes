@@ -33,6 +33,7 @@ func main() {
 		Examenes:   repo.NewExamenes(pool),
 		Items:      repo.NewItems(pool),
 		Clave:      repo.NewClave(pool),
+		Ensayos:    repo.NewEnsayos(pool),
 		Imagenes:   imagenes,
 		UploadsDir: cfg.UploadsDir,
 		JWT:        auth.NewManager(cfg.JWTSecret, cfg.JWTTTL),

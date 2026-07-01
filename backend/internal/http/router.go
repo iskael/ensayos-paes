@@ -18,6 +18,7 @@ type Deps struct {
 	Examenes   *repo.Examenes
 	Items      *repo.Items
 	Clave      *repo.Clave
+	Ensayos    *repo.Ensayos
 	Imagenes   *storage.Imagenes
 	UploadsDir string
 	JWT        *auth.Manager
@@ -40,6 +41,7 @@ func New(d Deps) http.Handler {
 
 	authH := &authHandler{usuarios: d.Usuarios, jwt: d.JWT}
 	bancoH := &bancoHandler{examenes: d.Examenes, items: d.Items, clave: d.Clave, imagenes: d.Imagenes}
+	ensayoH := &ensayoHandler{ensayos: d.Ensayos}
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Post("/auth/register", authH.registrar)
@@ -79,6 +81,21 @@ func New(d Deps) http.Handler {
 				})
 
 				admin.Post("/imagenes", bancoH.subirImagen)
+			})
+
+			priv.Group(func(est chi.Router) {
+				est.Use(RequerirRol(domain.RolEstudiante))
+
+				est.Route("/ensayos", func(en chi.Router) {
+					en.Post("/", ensayoH.crear)
+					en.Get("/", ensayoH.listar)
+					en.Route("/{ensayoId}", func(er chi.Router) {
+						er.Get("/", ensayoH.obtener)
+						er.Patch("/respuestas", ensayoH.guardarRespuestas)
+						er.Post("/enviar", ensayoH.enviar)
+						er.Get("/resultado", ensayoH.resultado)
+					})
+				})
 			})
 		})
 	})

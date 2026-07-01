@@ -33,6 +33,14 @@ go run ./cmd/api
 - `POST        /api/v1/items/{itemId}/ocultar`
 - `POST        /api/v1/imagenes`  (multipart, campo `archivo`; sirve estático en `/uploads/*`)
 
+**Fase 3 — Ensayos (requiere rol estudiante)**
+- `POST /api/v1/ensayos`  (nivel, ejes[], cantidad 10|20|30 → genera aleatorio; 422 `STOCK_INSUFICIENTE` si falta stock)
+- `GET  /api/v1/ensayos`  (historial)
+- `GET  /api/v1/ensayos/{ensayoId}`  (mientras está en progreso, sin revelar la respuesta correcta)
+- `PATCH /api/v1/ensayos/{ensayoId}/respuestas`  (guarda progreso)
+- `POST /api/v1/ensayos/{ensayoId}/enviar`  (corrige y devuelve el resultado)
+- `GET  /api/v1/ensayos/{ensayoId}/resultado`  (puntaje 0–1000, revisión y desglose por eje)
+
 ## Estructura
 
 - `cmd/api` — entrypoint.
@@ -40,7 +48,7 @@ go run ./cmd/api
 - `internal/db` — pool de conexión (pgx).
 - `internal/domain` — entidades y reglas (Usuario, Item, Examen, scoring, clave).
 - `internal/auth` — hashing y JWT.
-- `internal/repo` — acceso a datos (usuarios, examenes, items, clave).
+- `internal/repo` — acceso a datos (usuarios, examenes, items, clave, ensayos).
 - `internal/storage` — almacenamiento local de imágenes.
 - `internal/http` — router, handlers y middleware (paquete `httpx`).
 - `migrations` — esquema SQL.
