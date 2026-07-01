@@ -16,6 +16,13 @@ import (
 func main() {
 	cfg := config.Load()
 
+	if cfg.JWTSecret == "cambiar-en-produccion" {
+		log.Println("ADVERTENCIA: JWT_SECRET usa el valor por defecto. Configúrelo antes de desplegar a producción.")
+	}
+	if cfg.AllowedOrigin == "*" {
+		log.Println("ADVERTENCIA: CORS_ALLOWED_ORIGIN='*' (cualquier origen). Configúrelo al dominio del frontend en producción.")
+	}
+
 	ctx := context.Background()
 	pool, err := db.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -29,15 +36,16 @@ func main() {
 	}
 
 	deps := httpx.Deps{
-		Usuarios:   repo.NewUsuarios(pool),
-		Examenes:   repo.NewExamenes(pool),
-		Items:      repo.NewItems(pool),
-		Clave:      repo.NewClave(pool),
-		Ensayos:    repo.NewEnsayos(pool),
-		Grupos:     repo.NewGrupos(pool),
-		Imagenes:   imagenes,
-		UploadsDir: cfg.UploadsDir,
-		JWT:        auth.NewManager(cfg.JWTSecret, cfg.JWTTTL),
+		Usuarios:      repo.NewUsuarios(pool),
+		Examenes:      repo.NewExamenes(pool),
+		Items:         repo.NewItems(pool),
+		Clave:         repo.NewClave(pool),
+		Ensayos:       repo.NewEnsayos(pool),
+		Grupos:        repo.NewGrupos(pool),
+		Imagenes:      imagenes,
+		UploadsDir:    cfg.UploadsDir,
+		JWT:           auth.NewManager(cfg.JWTSecret, cfg.JWTTTL),
+		AllowedOrigin: cfg.AllowedOrigin,
 	}
 	handler := httpx.New(deps)
 

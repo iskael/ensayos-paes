@@ -24,17 +24,34 @@ func NewUsuarios(pool *pgxpool.Pool) *Usuarios {
 	return &Usuarios{pool: pool}
 }
 
-func (r *Usuarios) Crear(ctx context.Context, nombre, email, hash string, rol domain.Rol) (domain.Usuario, error) {
-	u := domain.Usuario{Nombre: nombre, Email: email, Rol: rol}
-	const q = `INSERT INTO usuarios (nombre, email, password_hash, rol)
-	           VALUES ($1, $2, $3, $4)
-	           RETURNING id::text, fecha_creacion`
-	err := r.pool.QueryRow(ctx, q, nombre, email, hash, string(rol)).Scan(&u.ID, &u.FechaCreacion)
+// Crear inserta el usuario y, en la misma transacción, su aceptación de los
+// Términos y Condiciones vigentes (versionTerminos) — si una de las dos
+// operaciones falla, no queda un usuario sin aceptación registrada.
+func (r *Usuarios) Crear(ctx context.Context, nombre, email, hash string, rol domain.Rol, versionTerminos string) (domain.Usuario, error) {
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
+		return domain.Usuario{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	u := domain.Usuario{Nombre: nombre, Email: email, Rol: rol}
+	const qUsuario = `INSERT INTO usuarios (nombre, email, password_hash, rol)
+	                   VALUES ($1, $2, $3, $4)
+	                   RETURNING id::text, fecha_creacion`
+	if err := tx.QueryRow(ctx, qUsuario, nombre, email, hash, string(rol)).Scan(&u.ID, &u.FechaCreacion); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return domain.Usuario{}, ErrEmailDuplicado
 		}
+		return domain.Usuario{}, err
+	}
+
+	const qTerminos = `INSERT INTO terminos_aceptados (usuario_id, version) VALUES ($1, $2)`
+	if _, err := tx.Exec(ctx, qTerminos, u.ID, versionTerminos); err != nil {
+		return domain.Usuario{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return domain.Usuario{}, err
 	}
 	return u, nil

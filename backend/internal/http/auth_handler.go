@@ -17,10 +17,11 @@ type authHandler struct {
 }
 
 type registroReq struct {
-	Nombre   string `json:"nombre"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Rol      string `json:"rol"`
+	Nombre         string `json:"nombre"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	Rol            string `json:"rol"`
+	AceptaTerminos bool   `json:"acepta_terminos"`
 }
 
 type loginReq struct {
@@ -45,6 +46,10 @@ func (h *authHandler) registrar(w http.ResponseWriter, r *http.Request) {
 		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Datos de registro inválidos")
 		return
 	}
+	if !req.AceptaTerminos {
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Debe aceptar los Términos y Condiciones para registrarse")
+		return
+	}
 	rol := domain.Rol(req.Rol)
 	if rol != domain.RolEstudiante && rol != domain.RolProfesor {
 		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Rol inválido para registro")
@@ -57,7 +62,7 @@ func (h *authHandler) registrar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.usuarios.Crear(r.Context(), req.Nombre, req.Email, hash, rol)
+	u, err := h.usuarios.Crear(r.Context(), req.Nombre, req.Email, hash, rol, domain.VersionTerminosActual)
 	if errors.Is(err, repo.ErrEmailDuplicado) {
 		escribirError(w, http.StatusConflict, "EMAIL_DUPLICADO", "El email ya está registrado")
 		return

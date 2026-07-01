@@ -3,6 +3,7 @@ package httpx
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -14,21 +15,25 @@ import (
 )
 
 type Deps struct {
-	Usuarios   *repo.Usuarios
-	Examenes   *repo.Examenes
-	Items      *repo.Items
-	Clave      *repo.Clave
-	Ensayos    *repo.Ensayos
-	Grupos     *repo.Grupos
-	Imagenes   *storage.Imagenes
-	UploadsDir string
-	JWT        *auth.Manager
+	Usuarios      *repo.Usuarios
+	Examenes      *repo.Examenes
+	Items         *repo.Items
+	Clave         *repo.Clave
+	Ensayos       *repo.Ensayos
+	Grupos        *repo.Grupos
+	Imagenes      *storage.Imagenes
+	UploadsDir    string
+	JWT           *auth.Manager
+	AllowedOrigin string
 }
 
 func New(d Deps) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
+	r.Use(CabecerasSeguridad)
+	r.Use(CORS(d.AllowedOrigin))
+	r.Use(LimitarBodyGlobal(25 << 20)) // backstop; los endpoints multipart aplican su propio límite más estricto
 
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -45,10 +50,11 @@ func New(d Deps) http.Handler {
 	ensayoH := &ensayoHandler{ensayos: d.Ensayos}
 	dashboardH := &dashboardHandler{ensayos: d.Ensayos}
 	grupoH := &grupoHandler{grupos: d.Grupos, ensayos: d.Ensayos}
+	limitadorLogin := nuevoLimitadorTasa(10, time.Minute)
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Post("/auth/register", authH.registrar)
-		api.Post("/auth/login", authH.login)
+		api.With(LimitarTasa(limitadorLogin)).Post("/auth/login", authH.login)
 
 		api.Group(func(priv chi.Router) {
 			priv.Use(Autenticar(d.JWT))

@@ -21,8 +21,8 @@ go run ./cmd/api
 
 **Fase 1 — Auth**
 - `GET  /health`
-- `POST /api/v1/auth/register`  (rol: estudiante | profesor)
-- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/register`  (rol: estudiante | profesor; requiere `acepta_terminos: true` — registra versión y fecha en `terminos_aceptados`)
+- `POST /api/v1/auth/login`  (rate limit: 10 intentos/min por IP)
 - `POST /api/v1/auth/logout`    (requiere Bearer token)
 - `GET  /api/v1/me`             (requiere Bearer token)
 
@@ -56,6 +56,15 @@ go run ./cmd/api
 - `GET  /api/v1/grupos/{grupoId}`  (rol profesor dueño; detalle + progreso agregado)
 - `GET  /api/v1/grupos/{grupoId}/miembros`  (rol profesor dueño)
 - `GET  /api/v1/grupos/{grupoId}/estudiantes/{estudianteId}`  (rol profesor dueño; progreso individual)
+
+## Seguridad (Fase 7)
+
+- **CORS**: configurable con `CORS_ALLOWED_ORIGIN` (default `*`; usar el dominio real del frontend en producción).
+- **Cabeceras defensivas**: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` en toda respuesta.
+- **Límite de tamaño de body**: 25MB global como backstop; `POST /imagenes` (5MB) y `POST /examenes/{id}/importacion-pdf` (20MB) tienen su propio límite más estricto.
+- **Rate limiting**: `POST /auth/login` limitado a 10 intentos/minuto por IP (limitador en memoria, ver `internal/http/ratelimit.go`; para múltiples instancias del backend, reemplazar por un store compartido).
+- **Avisos de arranque**: el servidor loguea una advertencia si `JWT_SECRET` o `CORS_ALLOWED_ORIGIN` quedaron en su valor por defecto.
+- **Términos y Condiciones**: `POST /auth/register` exige `acepta_terminos: true`; la aceptación (versión + fecha) queda en `terminos_aceptados`, en la misma transacción que la creación del usuario.
 
 ## Estructura
 

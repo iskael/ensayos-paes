@@ -57,3 +57,47 @@ func RequerirRol(roles ...domain.Rol) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+// CabecerasSeguridad agrega cabeceras defensivas estándar a toda respuesta.
+func CabecerasSeguridad(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		next.ServeHTTP(w, r)
+	})
+}
+
+// LimitarBodyGlobal es un tope defensivo aplicado a TODA request (backstop
+// contra payloads de cientos de MB). Los endpoints multipart (imágenes,
+// PDF) aplican su propio límite más estricto por ruta; como MaxBytesReader
+// anida y prevalece el límite más chico, esto no afecta esos casos mientras
+// maxBytes se mantenga por encima de sus límites (5MB / 20MB).
+func LimitarBodyGlobal(maxBytes int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// CORS habilita llamadas desde el origen del frontend. allowedOrigin puede
+// ser "*" (desarrollo) o un origen específico (recomendado en producción).
+func CORS(allowedOrigin string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			if allowedOrigin != "*" {
+				w.Header().Set("Vary", "Origin")
+			}
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}

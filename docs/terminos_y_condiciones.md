@@ -2,6 +2,7 @@
 
 > **Borrador / propuesta.** Este documento es una base de trabajo y **no constituye asesoría legal**. Por tratarse de una plataforma que recopila datos de **menores de edad**, se recomienda su revisión por un abogado antes de publicarlo. Los campos entre corchetes (`[ ]`) deben completarse.
 
+**Versión:** 1.0 (debe coincidir con `domain.VersionTerminosActual` en el backend; incrementar en ambos lugares al publicar cambios relevantes)
 **Última actualización:** [fecha]
 **Responsable de la plataforma:** [nombre / razón social / persona responsable]
 **Contacto:** [correo de contacto] · **Protección de datos:** [correo del responsable de datos]

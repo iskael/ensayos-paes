@@ -398,18 +398,25 @@ paths:
       summary: Subir PDF y extraer preguntas (asistido)
       description: >
         Extrae preguntas del PDF y las crea como ítems en estado 'borrador'.
-        Toda pregunta extraída requiere revisión/edición humana antes de publicarse.
+        `eje` y `dificultad` se aplican como valor por defecto a todos los
+        ítems extraídos (el admin los ajusta por ítem al revisar). La
+        heurística de extracción nunca determina cuál alternativa es
+        correcta; toda pregunta extraída requiere revisión/edición humana
+        antes de publicarse (RN-04), reforzado por la validación de
+        publicación existente.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [archivo]
+              required: [archivo, eje, dificultad]
               properties:
                 archivo:
                   type: string
                   format: binary
+                eje: { $ref: '#/components/schemas/Eje' }
+                dificultad: { $ref: '#/components/schemas/Dificultad' }
       responses:
         '201':
           description: Ítems borrador creados a partir del PDF
@@ -804,7 +811,7 @@ components:
     # ---- Auth ----
     RegistroRequest:
       type: object
-      required: [nombre, email, password, rol]
+      required: [nombre, email, password, rol, acepta_terminos]
       properties:
         nombre: { type: string }
         email: { type: string, format: email }
@@ -812,6 +819,13 @@ components:
         rol:
           type: string
           enum: [estudiante, profesor]
+        acepta_terminos:
+          type: boolean
+          description: >
+            Debe ser true para completar el registro (declaración de
+            aceptación de los Términos y Condiciones; para menores de edad,
+            incluye contar con autorización de su padre/madre/tutor). El
+            backend registra la versión vigente y la fecha de aceptación.
     LoginRequest:
       type: object
       required: [email, password]
