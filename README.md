@@ -35,6 +35,8 @@ prototipo-ia/ Prototipo offline de generación de ítems (v2)
 
 Ver `docs/plan.md` para el detalle de fases. Empezar por **Fase 0 (Fundaciones)**.
 
+**Para levantar el backend y probarlo de extremo a extremo, ver [`GUIA_PRUEBA_LOCAL.md`](GUIA_PRUEBA_LOCAL.md).**
+
 ```bash
 # Backend
 cd backend && go run ./cmd/api      # health check en :8080/health

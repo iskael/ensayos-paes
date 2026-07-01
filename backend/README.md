@@ -17,6 +17,12 @@ migrate -path migrations -database "$DATABASE_URL" up
 go run ./cmd/api
 ```
 
+## Herramientas de puesta en marcha
+
+- `cmd/seed-admin` — crea el primer usuario admin (el registro público no permite ese rol).
+- `scripts/smoke_test.sh` — prueba end-to-end de todo el flujo vía curl+jq.
+- Ver [`../GUIA_PRUEBA_LOCAL.md`](../GUIA_PRUEBA_LOCAL.md) para el paso a paso completo.
+
 ## Endpoints disponibles
 
 **Fase 1 — Auth**

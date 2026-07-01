@@ -52,3 +52,8 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 - **CORS y cabeceras de seguridad escritos a mano** (sin `go-chi/cors`), por la misma razón: cero dependencias nuevas no verificables en este entorno.
 - **Límite global de body (25MB) como backstop, no como límite operativo**: como `http.MaxBytesReader` anida y prevalece el límite más chico al reutilizarse sobre el mismo `r.Body`, los límites específicos de imágenes (5MB) y PDF (20MB) siguen siendo los efectivos para esas rutas; el global de 25MB solo cierra el hueco que tenían las rutas JSON (auth, ítems, ensayos, grupos), que antes no tenían ningún tope.
 - **Avisos de arranque, no fallos duros**: si `JWT_SECRET` o `CORS_ALLOWED_ORIGIN` quedan en su valor por defecto, el servidor loguea una advertencia pero sigue iniciando — prioriza que el entorno de desarrollo funcione sin fricción, dejando la responsabilidad de configurar valores reales antes de producción.
+
+## Puesta en marcha local (herramientas de apoyo)
+- **`cmd/seed-admin`**: como el registro público solo permite estudiante/profesor a propósito, se agregó un comando CLI que crea el admin directamente vía los mismos repos (reutiliza `Usuarios.Crear`, incluyendo su aceptación de T&C).
+- **`scripts/smoke_test.sh`**: script bash (curl + jq) que recorre el flujo completo end-to-end (registro con/sin T&C, examen, ítems, clave, publicación, ensayo, respuestas, resultado, dashboard, grupos). Se validó la lógica de separación body/status y las transformaciones `jq` con datos simulados en este entorno (sin Postgres real disponible), pero no se pudo ejecutar contra un servidor real — es el primer script a correr al levantar el backend.
+- Ver `GUIA_PRUEBA_LOCAL.md` en la raíz del repo para el paso a paso completo.
