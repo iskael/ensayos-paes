@@ -41,6 +41,10 @@ go run ./cmd/api
 - `POST /api/v1/ensayos/{ensayoId}/enviar`  (corrige y devuelve el resultado)
 - `GET  /api/v1/ensayos/{ensayoId}/resultado`  (puntaje 0–1000, revisión y desglose por eje)
 
+**Fase 4 — Dashboard (requiere rol estudiante)**
+- `GET /api/v1/dashboard/resumen`  (total de ensayos, último/mejor/promedio de puntaje, desempeño por eje)
+- `GET /api/v1/dashboard/evolucion`  (serie fecha → puntaje, para el gráfico)
+
 ## Estructura
 
 - `cmd/api` — entrypoint.

@@ -369,3 +369,70 @@ func respuestaEsCorrecta(it EnsayoItemDetalle) bool {
 	}
 	return false
 }
+
+// ---------------- Dashboard ----------------
+
+// FinalizadosPorEstudiante retorna los ensayos finalizados ordenados por
+// fecha_fin ascendente (útil tanto para el resumen como para la evolución).
+func (r *Ensayos) FinalizadosPorEstudiante(ctx context.Context, estudianteID string) ([]domain.Ensayo, error) {
+	const q = `SELECT id::text, estudiante_id::text, nivel::text, ejes::text[], cantidad, modo, estado::text,
+	                  fecha_inicio, fecha_fin, puntaje, puntos_obtenidos, puntos_posibles, correctas, total
+	           FROM ensayos WHERE estudiante_id = $1 AND estado = 'finalizado'
+	           ORDER BY fecha_fin ASC`
+	rows, err := r.pool.Query(ctx, q, estudianteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []domain.Ensayo{}
+	for rows.Next() {
+		var e domain.Ensayo
+		var nivel, modo, estado string
+		var ejes []string
+		if err := rows.Scan(&e.ID, &e.EstudianteID, &nivel, &ejes, &e.Cantidad, &modo, &estado,
+			&e.FechaInicio, &e.FechaFin, &e.Puntaje, &e.PuntosObtenidos, &e.PuntosPosibles, &e.Correctas, &e.Total); err != nil {
+			return nil, err
+		}
+		e.Nivel = domain.Nivel(nivel)
+		e.Modo = domain.ModoEnsayo(modo)
+		e.Estado = domain.EstadoEnsayo(estado)
+		e.Ejes = make([]domain.Eje, len(ejes))
+		for i, s := range ejes {
+			e.Ejes[i] = domain.Eje(s)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// DesempenoPorEjeEstudiante retorna, por cada ítem de cada ensayo finalizado
+// del estudiante, su eje/corrección/peso, listo para domain.CalcularDesglosePorEje.
+func (r *Ensayos) DesempenoPorEjeEstudiante(ctx context.Context, estudianteID string) ([]domain.ItemResultado, error) {
+	const q = `SELECT i.eje::text, ei.es_correcta, ei.peso_snapshot
+	           FROM ensayo_items ei
+	           JOIN ensayos e ON e.id = ei.ensayo_id
+	           JOIN items i ON i.id = ei.item_id
+	           WHERE e.estudiante_id = $1 AND e.estado = 'finalizado'`
+	rows, err := r.pool.Query(ctx, q, estudianteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []domain.ItemResultado
+	for rows.Next() {
+		var eje string
+		var esCorrecta *bool
+		var peso int
+		if err := rows.Scan(&eje, &esCorrecta, &peso); err != nil {
+			return nil, err
+		}
+		out = append(out, domain.ItemResultado{
+			Eje:          domain.Eje(eje),
+			EsCorrecta:   esCorrecta != nil && *esCorrecta,
+			PesoSnapshot: peso,
+		})
+	}
+	return out, rows.Err()
+}

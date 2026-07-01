@@ -42,6 +42,7 @@ func New(d Deps) http.Handler {
 	authH := &authHandler{usuarios: d.Usuarios, jwt: d.JWT}
 	bancoH := &bancoHandler{examenes: d.Examenes, items: d.Items, clave: d.Clave, imagenes: d.Imagenes}
 	ensayoH := &ensayoHandler{ensayos: d.Ensayos}
+	dashboardH := &dashboardHandler{ensayos: d.Ensayos}
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Post("/auth/register", authH.registrar)
@@ -95,6 +96,11 @@ func New(d Deps) http.Handler {
 						er.Post("/enviar", ensayoH.enviar)
 						er.Get("/resultado", ensayoH.resultado)
 					})
+				})
+
+				est.Route("/dashboard", func(dh chi.Router) {
+					dh.Get("/resumen", dashboardH.resumen)
+					dh.Get("/evolucion", dashboardH.evolucion)
 				})
 			})
 		})
