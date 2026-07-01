@@ -45,6 +45,14 @@ go run ./cmd/api
 - `GET /api/v1/dashboard/resumen`  (total de ensayos, último/mejor/promedio de puntaje, desempeño por eje)
 - `GET /api/v1/dashboard/evolucion`  (serie fecha → puntaje, para el gráfico)
 
+**Fase 5 — Grupos**
+- `POST /api/v1/grupos`  (rol profesor; genera código de invitación)
+- `GET  /api/v1/grupos`  (rol profesor; sus grupos)
+- `POST /api/v1/grupos/unirse`  (rol estudiante; código → inscripción idempotente)
+- `GET  /api/v1/grupos/{grupoId}`  (rol profesor dueño; detalle + progreso agregado)
+- `GET  /api/v1/grupos/{grupoId}/miembros`  (rol profesor dueño)
+- `GET  /api/v1/grupos/{grupoId}/estudiantes/{estudianteId}`  (rol profesor dueño; progreso individual)
+
 ## Estructura
 
 - `cmd/api` — entrypoint.
@@ -52,7 +60,7 @@ go run ./cmd/api
 - `internal/db` — pool de conexión (pgx).
 - `internal/domain` — entidades y reglas (Usuario, Item, Examen, scoring, clave).
 - `internal/auth` — hashing y JWT.
-- `internal/repo` — acceso a datos (usuarios, examenes, items, clave, ensayos).
+- `internal/repo` — acceso a datos (usuarios, examenes, items, clave, ensayos, grupos).
 - `internal/storage` — almacenamiento local de imágenes.
 - `internal/http` — router, handlers y middleware (paquete `httpx`).
 - `migrations` — esquema SQL.

@@ -358,6 +358,117 @@ func (r *Ensayos) Finalizar(ctx context.Context, ensayoID string) (domain.Ensayo
 	return r.ObtenerBase(ctx, ensayoID)
 }
 
+// DesempenoPorEje retorna, por cada ítem de cada ensayo finalizado de los
+// estudiantes indicados, su eje/corrección/peso, listo para
+// domain.CalcularDesglosePorEje. Con un solo id sirve para el dashboard
+// individual (Fase 4); con varios, para el desempeño agregado de un grupo (Fase 5).
+func (r *Ensayos) DesempenoPorEje(ctx context.Context, estudianteIDs []string) ([]domain.ItemResultado, error) {
+	if len(estudianteIDs) == 0 {
+		return nil, nil
+	}
+	const q = `SELECT i.eje::text, ei.es_correcta, ei.peso_snapshot
+	           FROM ensayo_items ei
+	           JOIN ensayos e ON e.id = ei.ensayo_id
+	           JOIN items i ON i.id = ei.item_id
+	           WHERE e.estudiante_id = ANY($1) AND e.estado = 'finalizado'`
+	rows, err := r.pool.Query(ctx, q, estudianteIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []domain.ItemResultado
+	for rows.Next() {
+		var eje string
+		var esCorrecta *bool
+		var peso int
+		if err := rows.Scan(&eje, &esCorrecta, &peso); err != nil {
+			return nil, err
+		}
+		out = append(out, domain.ItemResultado{
+			Eje:          domain.Eje(eje),
+			EsCorrecta:   esCorrecta != nil && *esCorrecta,
+			PesoSnapshot: peso,
+		})
+	}
+	return out, rows.Err()
+}
+
+type ResumenEstudianteGrupo struct {
+	TotalEnsayos  int
+	UltimoPuntaje *int
+}
+
+// ResumenPorEstudiantes calcula total de ensayos finalizados y el puntaje del
+// más reciente para cada estudiante, en dos consultas agregadas (evita N+1
+// al listar los miembros de un grupo).
+func (r *Ensayos) ResumenPorEstudiantes(ctx context.Context, estudianteIDs []string) (map[string]ResumenEstudianteGrupo, error) {
+	out := map[string]ResumenEstudianteGrupo{}
+	for _, id := range estudianteIDs {
+		out[id] = ResumenEstudianteGrupo{}
+	}
+	if len(estudianteIDs) == 0 {
+		return out, nil
+	}
+
+	const qCount = `SELECT estudiante_id::text, COUNT(*) FROM ensayos
+	                WHERE estudiante_id = ANY($1) AND estado = 'finalizado'
+	                GROUP BY estudiante_id`
+	rows, err := r.pool.Query(ctx, qCount, estudianteIDs)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var id string
+		var n int
+		if err := rows.Scan(&id, &n); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		re := out[id]
+		re.TotalEnsayos = n
+		out[id] = re
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	const qUltimo = `SELECT DISTINCT ON (estudiante_id) estudiante_id::text, puntaje
+	                  FROM ensayos
+	                  WHERE estudiante_id = ANY($1) AND estado = 'finalizado'
+	                  ORDER BY estudiante_id, fecha_fin DESC`
+	rows2, err := r.pool.Query(ctx, qUltimo, estudianteIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows2.Close()
+	for rows2.Next() {
+		var id string
+		var puntaje int
+		if err := rows2.Scan(&id, &puntaje); err != nil {
+			return nil, err
+		}
+		p := puntaje
+		re := out[id]
+		re.UltimoPuntaje = &p
+		out[id] = re
+	}
+	return out, rows2.Err()
+}
+
+func (r *Ensayos) PromedioPuntaje(ctx context.Context, estudianteIDs []string) (*float64, error) {
+	if len(estudianteIDs) == 0 {
+		return nil, nil
+	}
+	const q = `SELECT AVG(puntaje)::float8 FROM ensayos WHERE estudiante_id = ANY($1) AND estado = 'finalizado'`
+	var promedio *float64
+	if err := r.pool.QueryRow(ctx, q, estudianteIDs).Scan(&promedio); err != nil {
+		return nil, err
+	}
+	return promedio, nil
+}
+
 func respuestaEsCorrecta(it EnsayoItemDetalle) bool {
 	if it.RespuestaSeleccionada == nil {
 		return false
@@ -402,37 +513,6 @@ func (r *Ensayos) FinalizadosPorEstudiante(ctx context.Context, estudianteID str
 			e.Ejes[i] = domain.Eje(s)
 		}
 		out = append(out, e)
-	}
-	return out, rows.Err()
-}
-
-// DesempenoPorEjeEstudiante retorna, por cada ítem de cada ensayo finalizado
-// del estudiante, su eje/corrección/peso, listo para domain.CalcularDesglosePorEje.
-func (r *Ensayos) DesempenoPorEjeEstudiante(ctx context.Context, estudianteID string) ([]domain.ItemResultado, error) {
-	const q = `SELECT i.eje::text, ei.es_correcta, ei.peso_snapshot
-	           FROM ensayo_items ei
-	           JOIN ensayos e ON e.id = ei.ensayo_id
-	           JOIN items i ON i.id = ei.item_id
-	           WHERE e.estudiante_id = $1 AND e.estado = 'finalizado'`
-	rows, err := r.pool.Query(ctx, q, estudianteID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var out []domain.ItemResultado
-	for rows.Next() {
-		var eje string
-		var esCorrecta *bool
-		var peso int
-		if err := rows.Scan(&eje, &esCorrecta, &peso); err != nil {
-			return nil, err
-		}
-		out = append(out, domain.ItemResultado{
-			Eje:          domain.Eje(eje),
-			EsCorrecta:   esCorrecta != nil && *esCorrecta,
-			PesoSnapshot: peso,
-		})
 	}
 	return out, rows.Err()
 }

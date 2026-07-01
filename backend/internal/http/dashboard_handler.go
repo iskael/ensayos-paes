@@ -49,7 +49,7 @@ func (h *dashboardHandler) resumen(w http.ResponseWriter, r *http.Request) {
 		resp.PromedioPuntaje = &promedio
 	}
 
-	items, err := h.ensayos.DesempenoPorEjeEstudiante(r.Context(), claims.UsuarioID)
+	items, err := h.ensayos.DesempenoPorEje(r.Context(), []string{claims.UsuarioID})
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo calcular el desempeño por eje")
 		return

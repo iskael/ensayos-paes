@@ -19,6 +19,7 @@ type Deps struct {
 	Items      *repo.Items
 	Clave      *repo.Clave
 	Ensayos    *repo.Ensayos
+	Grupos     *repo.Grupos
 	Imagenes   *storage.Imagenes
 	UploadsDir string
 	JWT        *auth.Manager
@@ -43,6 +44,7 @@ func New(d Deps) http.Handler {
 	bancoH := &bancoHandler{examenes: d.Examenes, items: d.Items, clave: d.Clave, imagenes: d.Imagenes}
 	ensayoH := &ensayoHandler{ensayos: d.Ensayos}
 	dashboardH := &dashboardHandler{ensayos: d.Ensayos}
+	grupoH := &grupoHandler{grupos: d.Grupos, ensayos: d.Ensayos}
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Post("/auth/register", authH.registrar)
@@ -101,6 +103,22 @@ func New(d Deps) http.Handler {
 				est.Route("/dashboard", func(dh chi.Router) {
 					dh.Get("/resumen", dashboardH.resumen)
 					dh.Get("/evolucion", dashboardH.evolucion)
+				})
+			})
+
+			// Grupos mezcla roles por endpoint (profesor: crear/listar/detalle;
+			// estudiante: unirse), por eso se aplica RequerirRol con With() por
+			// ruta en vez de un sub-grupo único.
+			priv.Route("/grupos", func(gr chi.Router) {
+				gr.With(RequerirRol(domain.RolProfesor)).Post("/", grupoH.crear)
+				gr.With(RequerirRol(domain.RolProfesor)).Get("/", grupoH.listar)
+				gr.With(RequerirRol(domain.RolEstudiante)).Post("/unirse", grupoH.unirse)
+
+				gr.Route("/{grupoId}", func(gid chi.Router) {
+					gid.Use(RequerirRol(domain.RolProfesor))
+					gid.Get("/", grupoH.obtener)
+					gid.Get("/miembros", grupoH.miembros)
+					gid.Get("/estudiantes/{estudianteId}", grupoH.progresoEstudiante)
 				})
 			})
 		})

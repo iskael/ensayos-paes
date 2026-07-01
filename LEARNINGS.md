@@ -28,3 +28,11 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 ## Fase 4 — Dashboard
 - **Reutiliza `domain.CalcularDesglosePorEje`**: el desempeño agregado por eje del dashboard usa la misma función pura que el desglose de un ensayo individual, alimentada con ítems de TODOS los ensayos finalizados del estudiante (join `ensayo_items` + `ensayos` + `items`).
 - **Una sola consulta para resumen y evolución**: `FinalizadosPorEstudiante` devuelve los ensayos ordenados por `fecha_fin ASC`; el último elemento es el más reciente (`ultimo_puntaje`), evitando una segunda consulta ordenada DESC.
+
+## Fase 5 — Grupos
+- **`DesempenoPorEjeEstudiante` se generalizó a `DesempenoPorEje([]string)`**: con un solo ID sirve para el dashboard individual (Fase 4); con varios, para el desempeño agregado de un grupo. Mismo patrón para reutilizar `domain.CalcularDesglosePorEje`.
+- **Sin N+1 al listar miembros**: `ResumenPorEstudiantes` calcula total de ensayos y último puntaje de *todos* los miembros en 2 queries agregadas (COUNT GROUP BY + DISTINCT ON), no un loop por estudiante.
+- **Código de invitación**: 7 caracteres de un alfabeto de 32 símbolos sin 0/O/1/I/L (evita confusión al dictarlo/leerlo); reintenta ante colisión de unicidad (poco probable).
+- **`UnirsePorCodigo` es idempotente**: `ON CONFLICT (grupo_id, estudiante_id) DO NOTHING` — unirse dos veces no falla.
+- **RN-06 (aislamiento entre profesores)**: `obtenerPropioGrupo` devuelve 404 si el grupo no es del profesor autenticado (mismo criterio que "ensayo ajeno" en Fase 3: no revela existencia).
+- **Rutas con roles mixtos por endpoint** (`/grupos`): en vez de anidar otro sub-grupo de middleware, se usa `chi.Router.With(RequerirRol(...))` por ruta individual, ya que `POST /grupos` (profesor) y `POST /grupos/unirse` (estudiante) conviven bajo el mismo prefijo.

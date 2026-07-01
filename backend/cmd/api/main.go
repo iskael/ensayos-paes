@@ -34,6 +34,7 @@ func main() {
 		Items:      repo.NewItems(pool),
 		Clave:      repo.NewClave(pool),
 		Ensayos:    repo.NewEnsayos(pool),
+		Grupos:     repo.NewGrupos(pool),
 		Imagenes:   imagenes,
 		UploadsDir: cfg.UploadsDir,
 		JWT:        auth.NewManager(cfg.JWTSecret, cfg.JWTTTL),
