@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/usuario/ensayos-paes/internal/domain"
+	"github.com/usuario/ensayos-paes/internal/pdfimport"
 	"github.com/usuario/ensayos-paes/internal/repo"
 	"github.com/usuario/ensayos-paes/internal/storage"
 )
@@ -415,6 +416,87 @@ func (h *bancoHandler) ocultarItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	escribirJSON(w, http.StatusOK, oculto)
+}
+
+// ---------------- Importación de PDF (asistida) ----------------
+
+// importarPdf extrae texto del PDF y segmenta preguntas candidatas por
+// heurística (numeración + marcadores A-D). Los ítems creados quedan en
+// 'borrador' con origen 'oficial' y SIN alternativa correcta marcada: el
+// validador de publicación (domain.ValidarAlternativas) ya impide
+// publicarlos hasta que el admin los revise y complete (RN-04).
+func (h *bancoHandler) importarPdf(w http.ResponseWriter, r *http.Request) {
+	examenID := chi.URLParam(r, "examenId")
+	examen, err := h.examenes.PorID(r.Context(), examenID)
+	if errors.Is(err, repo.ErrNoEncontrado) {
+		escribirError(w, http.StatusNotFound, "NO_ENCONTRADO", "Examen no encontrado")
+		return
+	}
+	if err != nil {
+		escribirError(w, http.StatusInternalServerError, "INTERNO", "Error al obtener el examen")
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 20<<20) // 20MB
+	if err := r.ParseMultipartForm(20 << 20); err != nil {
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Archivo inválido o demasiado grande (máx. 20MB)")
+		return
+	}
+
+	// eje/dificultad se aplican como valor por defecto a TODOS los ítems
+	// extraídos; el admin los ajusta por ítem durante la revisión.
+	eje := domain.Eje(r.FormValue("eje"))
+	dificultad := domain.Dificultad(r.FormValue("dificultad"))
+	if !eje.Valido() || !dificultad.Valido() {
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Debe indicar 'eje' y 'dificultad' válidos como valores por defecto para los ítems extraídos")
+		return
+	}
+
+	file, header, err := r.FormFile("archivo")
+	if err != nil {
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Falta el archivo 'archivo'")
+		return
+	}
+	defer file.Close()
+
+	texto, err := pdfimport.ExtraerTexto(file, header.Size)
+	if err != nil {
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "No se pudo leer el PDF (¿está escaneado como imagen o corrupto?)")
+		return
+	}
+	preguntas := pdfimport.SegmentarPreguntas(texto)
+	if len(preguntas) == 0 {
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "No se detectaron preguntas en el PDF; cárguelas manualmente")
+		return
+	}
+
+	creados := make([]domain.Item, 0, len(preguntas))
+	for _, p := range preguntas {
+		alts := make([]domain.Alternativa, 0, len(p.Alternativas))
+		for _, a := range p.Alternativas {
+			alts = append(alts, domain.Alternativa{
+				Etiqueta: domain.EtiquetaAlternativa(a.Etiqueta),
+				Texto:    a.Texto,
+			})
+		}
+		it := domain.Item{
+			ExamenFuenteID: &examenID,
+			Enunciado:      p.Enunciado,
+			Eje:            eje,
+			Nivel:          examen.Nivel,
+			Dificultad:     dificultad,
+			Origen:         domain.OrigenOficial,
+			Alternativas:   alts,
+		}
+		creado, err := h.items.Crear(r.Context(), it)
+		if err != nil {
+			escribirError(w, http.StatusInternalServerError, "INTERNO", "Se detuvo la importación a mitad de camino: no se pudo crear un ítem")
+			return
+		}
+		creados = append(creados, creado)
+	}
+
+	escribirJSON(w, http.StatusCreated, creados)
 }
 
 // ---------------- Imágenes ----------------

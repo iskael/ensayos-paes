@@ -3,6 +3,9 @@
 ## Puesta en marcha (Fase 0/1)
 
 ```bash
+# 0) Dependencia de Fase 6 (importación de PDF) — agregarla una vez:
+go get github.com/ledongthuc/pdf@latest
+
 # 1) Dependencias
 go mod tidy
 
@@ -32,6 +35,7 @@ go run ./cmd/api
 - `POST        /api/v1/items/{itemId}/publicar`
 - `POST        /api/v1/items/{itemId}/ocultar`
 - `POST        /api/v1/imagenes`  (multipart, campo `archivo`; sirve estático en `/uploads/*`)
+- `POST        /api/v1/examenes/{examenId}/importacion-pdf`  (multipart: `archivo` (PDF) + `eje`, `dificultad` por defecto; crea ítems en `borrador`, ver Fase 6)
 
 **Fase 3 — Ensayos (requiere rol estudiante)**
 - `POST /api/v1/ensayos`  (nivel, ejes[], cantidad 10|20|30 → genera aleatorio; 422 `STOCK_INSUFICIENTE` si falta stock)
@@ -62,5 +66,6 @@ go run ./cmd/api
 - `internal/auth` — hashing y JWT.
 - `internal/repo` — acceso a datos (usuarios, examenes, items, clave, ensayos, grupos).
 - `internal/storage` — almacenamiento local de imágenes.
+- `internal/pdfimport` — extracción de texto y segmentación heurística de preguntas desde PDF (Fase 6).
 - `internal/http` — router, handlers y middleware (paquete `httpx`).
 - `migrations` — esquema SQL.

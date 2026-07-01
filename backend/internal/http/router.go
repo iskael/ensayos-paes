@@ -68,6 +68,7 @@ func New(d Deps) http.Handler {
 						er.Delete("/", bancoH.eliminarExamen)
 						er.Get("/clave", bancoH.obtenerClave)
 						er.Put("/clave", bancoH.definirClave)
+						er.Post("/importacion-pdf", bancoH.importarPdf)
 					})
 				})
 
