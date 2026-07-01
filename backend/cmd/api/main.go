@@ -1,29 +1,33 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"log"
 	"net/http"
-	"os"
+
+	"github.com/usuario/ensayos-paes/internal/auth"
+	"github.com/usuario/ensayos-paes/internal/config"
+	"github.com/usuario/ensayos-paes/internal/db"
+	httpx "github.com/usuario/ensayos-paes/internal/http"
+	"github.com/usuario/ensayos-paes/internal/repo"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	})
+	cfg := config.Load()
 
-	addr := ":" + port()
-	log.Printf("API escuchando en %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	ctx := context.Background()
+	pool, err := db.Connect(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("db: %v", err)
+	}
+	defer pool.Close()
+
+	usuarios := repo.NewUsuarios(pool)
+	jwtManager := auth.NewManager(cfg.JWTSecret, cfg.JWTTTL)
+	handler := httpx.New(httpx.Deps{Usuarios: usuarios, JWT: jwtManager})
+
+	log.Printf("API escuchando en :%s", cfg.Port)
+	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func port() string {
-	if p := os.Getenv("PORT"); p != "" {
-		return p
-	}
-	return "8080"
 }
