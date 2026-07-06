@@ -1,0 +1,5 @@
+bin/
+uploads/
+*.test
+*.out
+coverage.*

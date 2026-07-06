@@ -3,18 +3,64 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ensayos
-      POSTGRES_PASSWORD: ensayos
-      POSTGRES_DB: ensayos_paes
+      POSTGRES_USER: ${POSTGRES_USER:-ensayos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ensayos}
+      POSTGRES_DB: ${POSTGRES_DB:-ensayos_paes}
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ensayos -d ensayos_paes"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ensayos} -d ${POSTGRES_DB:-ensayos_paes}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  migrate:
+    image: migrate/migrate:v4.17.1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    entrypoint:
+      - migrate
+      - -path
+      - /migrations
+      - -database
+      - postgres://${POSTGRES_USER:-ensayos}:${POSTGRES_PASSWORD:-ensayos}@db:5432/${POSTGRES_DB:-ensayos_paes}?sslmode=disable
+      - up
+    restart: "no"
+
+  api:
+    build:
+      context: ./backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://${POSTGRES_USER:-ensayos}:${POSTGRES_PASSWORD:-ensayos}@db:5432/${POSTGRES_DB:-ensayos_paes}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en .env}
+      JWT_TTL_HORAS: ${JWT_TTL_HORAS:-24}
+      UPLOADS_DIR: /app/uploads
+      UPLOADS_URL: ${UPLOADS_URL:-http://localhost:8080/uploads}
+      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-*}
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
 volumes:
   db_data:
+  uploads_data:

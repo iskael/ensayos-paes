@@ -21,7 +21,8 @@ venv/
 
 # Entorno / secretos
 .env
-.env.*
+.env.local
+.env.production
 *.local
 
 # Sistema / editores

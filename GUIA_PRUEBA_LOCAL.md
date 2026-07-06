@@ -8,12 +8,23 @@ un flujo completo de extremo a extremo.
 ## 1. Prerrequisitos
 
 - **Go 1.22+**
-- **PostgreSQL 13+** corriendo (local, Docker, o el que ya tengas en tu Proxmox)
+- **PostgreSQL 13+** corriendo (Docker vía `make db-up`, local, o el que ya tengas en tu Proxmox)
 - `psql` disponible (o cualquier cliente de Postgres)
 - `curl` y `jq` (para el script de prueba end-to-end) — `apt install jq` / `brew install jq`
 - Opcional: [`golang-migrate`](https://github.com/golang-migrate/migrate) CLI (si no lo tienes, aplicamos las migraciones a mano con `psql`, ver paso 4)
 
 ## 2. Crear la base de datos
+
+**Opción A — Docker (recomendado, no requiere Postgres instalado):**
+
+```bash
+make db-up   # o: docker compose up -d
+```
+
+Levanta Postgres con las credenciales que ya trae `.env.example` por defecto
+(`ensayos`/`ensayos`, db `ensayos_paes`).
+
+**Opción B — Postgres propio (local o Proxmox):**
 
 ```bash
 createdb ensayos_paes

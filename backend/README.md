@@ -9,11 +9,14 @@ go get github.com/ledongthuc/pdf@latest
 # 1) Dependencias
 go mod tidy
 
-# 2) Base de datos (Postgres) y migraciones
-#    con golang-migrate:
+# 2) Base de datos (Postgres): docker compose (ver ../docker-compose.yml)
+#    o un Postgres propio
+make -C .. db-up
+
+# 3) Migraciones, con golang-migrate:
 migrate -path migrations -database "$DATABASE_URL" up
 
-# 3) Variables de entorno (ver ../.env.example) y correr
+# 4) Variables de entorno (ver ../.env.example) y correr
 go run ./cmd/api
 ```
 
