@@ -2,6 +2,16 @@
 
 Stack completo (Postgres + migraciones + API + frontend) vía `docker-compose.yml`.
 
+## Instancia actual
+
+- **Proxmox host**: `192.168.0.155` (nodo `pve`).
+- **CT**: VMID `118`, hostname `ensayos-paes`, IP `192.168.0.190/24`.
+- **App**: frontend en `http://192.168.0.190/`, API en `http://192.168.0.190:8080`.
+- Código desplegado copiando el working tree (el repo de GitHub es privado;
+  no se pudo `git clone` sin credenciales dentro del CT). Para actualizar,
+  repetir la transferencia o configurar un deploy key/PAT y clonar en
+  `/opt/app`.
+
 ## 1. Contenedor (LXC)
 
 CT Debian 13, sin privilegios, con `nesting=1,keyctl=1` (requerido para correr
