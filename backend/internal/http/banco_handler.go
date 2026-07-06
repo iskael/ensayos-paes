@@ -236,15 +236,15 @@ type alternativaInput struct {
 }
 
 type itemInput struct {
-	ExamenFuenteID *string             `json:"examen_fuente_id"`
-	Enunciado      string              `json:"enunciado"`
-	ImagenURL      *string             `json:"imagen_url"`
-	Eje            string              `json:"eje"`
-	Nivel          string              `json:"nivel"`
-	Dificultad     string              `json:"dificultad"`
-	Peso           *int                `json:"peso"`
-	Explicacion    *string             `json:"explicacion"`
-	Alternativas   []alternativaInput  `json:"alternativas"`
+	ExamenFuenteID *string            `json:"examen_fuente_id"`
+	Enunciado      string             `json:"enunciado"`
+	ImagenURL      *string            `json:"imagen_url"`
+	Eje            string             `json:"eje"`
+	Nivel          string             `json:"nivel"`
+	Dificultad     string             `json:"dificultad"`
+	Peso           *int               `json:"peso"`
+	Explicacion    *string            `json:"explicacion"`
+	Alternativas   []alternativaInput `json:"alternativas"`
 }
 
 func (in itemInput) aDominio() (domain.Item, error) {

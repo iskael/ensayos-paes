@@ -249,15 +249,15 @@ type preguntaEnsayoResp struct {
 }
 
 type ensayoRespT struct {
-	ID          string                `json:"id"`
-	Nivel       domain.Nivel          `json:"nivel"`
-	Ejes        []domain.Eje          `json:"ejes"`
-	Cantidad    int                   `json:"cantidad"`
-	Modo        domain.ModoEnsayo     `json:"modo"`
-	Estado      domain.EstadoEnsayo   `json:"estado"`
-	FechaInicio time.Time             `json:"fecha_inicio"`
-	FechaFin    *time.Time            `json:"fecha_fin,omitempty"`
-	Preguntas   []preguntaEnsayoResp  `json:"preguntas"`
+	ID          string               `json:"id"`
+	Nivel       domain.Nivel         `json:"nivel"`
+	Ejes        []domain.Eje         `json:"ejes"`
+	Cantidad    int                  `json:"cantidad"`
+	Modo        domain.ModoEnsayo    `json:"modo"`
+	Estado      domain.EstadoEnsayo  `json:"estado"`
+	FechaInicio time.Time            `json:"fecha_inicio"`
+	FechaFin    *time.Time           `json:"fecha_fin,omitempty"`
+	Preguntas   []preguntaEnsayoResp `json:"preguntas"`
 }
 
 // ensayoResp NO expone la alternativa correcta mientras el ensayo está en
@@ -317,14 +317,14 @@ type desgloseEjeResp struct {
 }
 
 type resultadoRespT struct {
-	EnsayoID        string              `json:"ensayo_id"`
-	Puntaje         int                 `json:"puntaje"`
-	Correctas       int                 `json:"correctas"`
-	Total           int                 `json:"total"`
-	PuntosObtenidos int                 `json:"puntos_obtenidos"`
-	PuntosPosibles  int                 `json:"puntos_posibles"`
-	DesglosePorEje  []desgloseEjeResp   `json:"desglose_por_eje"`
-	Revision        []revisionItemResp  `json:"revision"`
+	EnsayoID        string             `json:"ensayo_id"`
+	Puntaje         int                `json:"puntaje"`
+	Correctas       int                `json:"correctas"`
+	Total           int                `json:"total"`
+	PuntosObtenidos int                `json:"puntos_obtenidos"`
+	PuntosPosibles  int                `json:"puntos_posibles"`
+	DesglosePorEje  []desgloseEjeResp  `json:"desglose_por_eje"`
+	Revision        []revisionItemResp `json:"revision"`
 }
 
 // resultadoResp usa los totales YA PERSISTIDOS por Finalizar (RN-02) para el

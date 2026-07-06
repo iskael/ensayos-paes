@@ -19,7 +19,7 @@ type StockInsuficienteError struct {
 }
 
 func (e *StockInsuficienteError) Error() string { return "stock insuficiente para generar el ensayo" }
-func (e *StockInsuficienteError) Unwrap() error  { return ErrStockInsuficiente }
+func (e *StockInsuficienteError) Unwrap() error { return ErrStockInsuficiente }
 
 type Ensayos struct {
 	pool *pgxpool.Pool

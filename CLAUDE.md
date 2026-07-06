@@ -45,5 +45,9 @@ Plataforma web mobile-first de ensayos PAES de matemáticas (M1/M2). MVP bajo **
 ```bash
 cd backend && go run ./cmd/api        # API (health en :8080/health)
 cd backend && go test ./...           # tests
+cd backend && go run ./cmd/seed-admin -email=... -password=...   # crear usuario admin (no hay registro público de admin)
+cd backend && ./scripts/smoke_test.sh <admin_email> <admin_password>  # smoke test e2e (requiere API corriendo, curl y jq)
 cd prototipo-ia && python3 genera_preguntas.py
 ```
+
+Para la puesta en marcha local paso a paso, ver `GUIA_PRUEBA_LOCAL.md`.
