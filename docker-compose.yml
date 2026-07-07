@@ -55,8 +55,12 @@ services:
   web:
     build:
       context: ./frontend
+      # Sin VITE_API_URL: el frontend deriva la URL de la API del host que
+      # uso el navegador para cargar la pagina (ver frontend/src/api.js).
+      # Solo fijar esta variable si se necesita apuntar a un backend en un
+      # host distinto al que sirve el frontend.
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://192.168.0.190:8080}
+        VITE_API_URL: ${VITE_API_URL:-}
     depends_on:
       - api
     ports:
