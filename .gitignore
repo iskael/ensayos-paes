@@ -16,8 +16,8 @@ __pycache__/
 venv/
 
 # Prototipo IA (salidas)
-/prototipo-ia/preguntas_generadas.json
-/prototipo-ia/reporte_calidad.txt
+/prototipo-ia/preguntas_generadas*.json
+/prototipo-ia/reporte_calidad*.txt
 
 # Entorno / secretos
 .env
