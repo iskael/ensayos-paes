@@ -8,6 +8,7 @@ import RendirEnsayo from './pages/RendirEnsayo.jsx'
 import Resultado from './pages/Resultado.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import BancoExamenes from './pages/BancoExamenes.jsx'
+import ExamenForm from './pages/ExamenForm.jsx'
 
 export default function App() {
   return (
@@ -60,6 +61,26 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <BancoExamenes />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes/nuevo"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ExamenForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes/:id"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ExamenForm />
             </LayoutAutenticado>
           </RutaPrivada>
         }
