@@ -1,4 +1,9 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+// Sin VITE_API_URL (build de produccion), se deriva del host que uso el
+// navegador para cargar la pagina -- asi el mismo build funciona accedido
+// por LAN, por Tailscale, o por cualquier otro host/IP, sin fijar uno solo
+// en tiempo de compilacion.
+const BASE_URL =
+  import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8080`
 
 export class ApiError extends Error {
   constructor(status, codigo, mensaje, extra) {
