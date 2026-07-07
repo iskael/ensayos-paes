@@ -16,7 +16,9 @@ export class ApiError extends Error {
 }
 
 async function pedir(ruta, { metodo = 'GET', body, token } = {}) {
-  const headers = { 'Content-Type': 'application/json' }
+  const esFormData = typeof FormData !== 'undefined' && body instanceof FormData
+  const headers = {}
+  if (!esFormData) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
 
   let res
@@ -24,7 +26,7 @@ async function pedir(ruta, { metodo = 'GET', body, token } = {}) {
     res = await fetch(`${BASE_URL}${ruta}`, {
       method: metodo,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: esFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
     throw new ApiError(0, 'ERROR_RED', 'No se pudo conectar con el servidor')
@@ -50,4 +52,35 @@ export const api = {
   obtenerResultado: (token, id) => pedir(`/api/v1/ensayos/${id}/resultado`, { token }),
   dashboardResumen: (token) => pedir('/api/v1/dashboard/resumen', { token }),
   dashboardEvolucion: (token) => pedir('/api/v1/dashboard/evolucion', { token }),
+  crearExamen: (token, body) => pedir('/api/v1/examenes', { metodo: 'POST', body, token }),
+  listarExamenes: (token, { limit, offset } = {}) => {
+    const params = new URLSearchParams()
+    if (limit !== undefined) params.set('limit', limit)
+    if (offset !== undefined) params.set('offset', offset)
+    const qs = params.toString()
+    return pedir(`/api/v1/examenes${qs ? `?${qs}` : ''}`, { token })
+  },
+  obtenerExamen: (token, id) => pedir(`/api/v1/examenes/${id}`, { token }),
+  actualizarExamen: (token, id, body) => pedir(`/api/v1/examenes/${id}`, { metodo: 'PUT', body, token }),
+  eliminarExamen: (token, id) => pedir(`/api/v1/examenes/${id}`, { metodo: 'DELETE', token }),
+  obtenerClave: (token, examenId) => pedir(`/api/v1/examenes/${examenId}/clave`, { token }),
+  definirClave: (token, examenId, pesos) =>
+    pedir(`/api/v1/examenes/${examenId}/clave`, { metodo: 'PUT', body: { pesos }, token }),
+  importarPdf: (token, examenId, formData) =>
+    pedir(`/api/v1/examenes/${examenId}/importacion-pdf`, { metodo: 'POST', body: formData, token }),
+  crearItem: (token, body) => pedir('/api/v1/items', { metodo: 'POST', body, token }),
+  listarItems: (token, filtros = {}) => {
+    const params = new URLSearchParams()
+    for (const [clave, valor] of Object.entries(filtros)) {
+      if (valor !== undefined && valor !== null && valor !== '') params.set(clave, valor)
+    }
+    const qs = params.toString()
+    return pedir(`/api/v1/items${qs ? `?${qs}` : ''}`, { token })
+  },
+  obtenerItem: (token, id) => pedir(`/api/v1/items/${id}`, { token }),
+  actualizarItem: (token, id, body) => pedir(`/api/v1/items/${id}`, { metodo: 'PUT', body, token }),
+  eliminarItem: (token, id) => pedir(`/api/v1/items/${id}`, { metodo: 'DELETE', token }),
+  publicarItem: (token, id) => pedir(`/api/v1/items/${id}/publicar`, { metodo: 'POST', token }),
+  ocultarItem: (token, id) => pedir(`/api/v1/items/${id}/ocultar`, { metodo: 'POST', token }),
+  subirImagen: (token, formData) => pedir('/api/v1/imagenes', { metodo: 'POST', body: formData, token }),
 }
