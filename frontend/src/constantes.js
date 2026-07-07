@@ -12,7 +12,7 @@ export const EJES = [
 export const MENU_POR_ROL = {
   estudiante: [
     { etiqueta: 'Configurar ensayo', ruta: '/', disponible: true },
-    { etiqueta: 'Mi progreso', ruta: null, disponible: false },
+    { etiqueta: 'Mi progreso', ruta: '/dashboard', disponible: true },
   ],
   profesor: [{ etiqueta: 'Mis grupos', ruta: null, disponible: false }],
   admin: [{ etiqueta: 'Banco de preguntas', ruta: null, disponible: false }],
