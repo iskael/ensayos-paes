@@ -222,16 +222,28 @@ export const api = {
 
 Este proyecto usa `"type": "module"` en `package.json`, así que `node` interpreta `.js` como ESM directamente.
 
-No hardcodear la contraseña real del admin en el código ni en la terminal history — pasarla por variable de entorno:
+No usar credenciales de admin preexistentes para esto — registrar un usuario de prueba nuevo (endpoint público, no requiere ningún secreto) y usarlo para probar `registrar` y `iniciarSesion` en el mismo script:
 
 ```bash
-cd frontend && ADMIN_EMAIL="admin@ensayospaes.cl" ADMIN_PASSWORD="<la contraseña real del admin, no commitear>" node -e '
+cd frontend && node -e '
 import("./src/api.js").then(async ({ api, ApiError }) => {
-  const login = await api.iniciarSesion({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD })
+  const email = `verificacion-task3-${Date.now()}@test.cl`
+  const password = "ClaveDePrueba123"
+
+  const registro = await api.registrar({
+    nombre: "Verificacion Task3",
+    email,
+    password,
+    rol: "estudiante",
+    acepta_terminos: true,
+  })
+  console.log("registro OK, token presente:", typeof registro.token === "string" && registro.token.length > 0)
+
+  const login = await api.iniciarSesion({ email, password })
   console.log("login OK, token presente:", typeof login.token === "string" && login.token.length > 0)
 
   try {
-    await api.iniciarSesion({ email: process.env.ADMIN_EMAIL, password: "clave-incorrecta" })
+    await api.iniciarSesion({ email, password: "clave-incorrecta" })
     console.log("ERROR: deberia haber lanzado ApiError")
   } catch (e) {
     console.log("login invalido -> ApiError:", e instanceof ApiError, "status:", e.status)
@@ -241,6 +253,7 @@ import("./src/api.js").then(async ({ api, ApiError }) => {
 ```
 Expected:
 ```
+registro OK, token presente: true
 login OK, token presente: true
 login invalido -> ApiError: true status: 401
 ```
