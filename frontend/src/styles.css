@@ -1,0 +1,125 @@
+:root {
+  --color-primario: #2f6fed;
+  --color-primario-oscuro: #1d4fb8;
+  --color-texto: #1a1a1a;
+  --color-texto-suave: #5a5a5a;
+  --color-fondo: #ffffff;
+  --color-fondo-suave: #f4f6fb;
+  --color-error: #c62828;
+  --color-borde: #d8dde6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-texto);
+  background: var(--color-fondo-suave);
+}
+
+.pantalla {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-fondo);
+  border-radius: 12px;
+  padding: 24px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.campo {
+  display: block;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.campo label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--color-texto-suave);
+}
+
+.campo input[type='text'],
+.campo input[type='email'],
+.campo input[type='password'],
+.campo select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.boton {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-primario);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--color-primario-oscuro);
+}
+
+.boton-secundario {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-primario);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-primario);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton-secundario:hover:not(:disabled) {
+  background: var(--color-fondo-suave);
+}
+
+.error {
+  color: var(--color-error);
+  font-size: 14px;
+  margin: 8px 0 16px;
+}
+
+.alternativa {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  text-align: left;
+  background: var(--color-fondo);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.alternativa.seleccionada {
+  border-color: var(--color-primario);
+  background: #eaf1ff;
+}

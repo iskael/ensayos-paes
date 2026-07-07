@@ -178,6 +178,7 @@ export class ApiError extends Error {
     super(mensaje || 'Error de red')
     this.status = status
     this.codigo = codigo
+    this.mensaje = mensaje
     this.extra = extra
   }
 }
@@ -222,14 +223,28 @@ export const api = {
 
 Este proyecto usa `"type": "module"` en `package.json`, así que `node` interpreta `.js` como ESM directamente.
 
+No usar credenciales de admin preexistentes para esto — registrar un usuario de prueba nuevo (endpoint público, no requiere ningún secreto) y usarlo para probar `registrar` y `iniciarSesion` en el mismo script:
+
 ```bash
 cd frontend && node -e '
 import("./src/api.js").then(async ({ api, ApiError }) => {
-  const login = await api.iniciarSesion({ email: "admin@ensayospaes.cl", password: "AdminProxmox2026" })
+  const email = `verificacion-task3-${Date.now()}@test.cl`
+  const password = "ClaveDePrueba123"
+
+  const registro = await api.registrar({
+    nombre: "Verificacion Task3",
+    email,
+    password,
+    rol: "estudiante",
+    acepta_terminos: true,
+  })
+  console.log("registro OK, token presente:", typeof registro.token === "string" && registro.token.length > 0)
+
+  const login = await api.iniciarSesion({ email, password })
   console.log("login OK, token presente:", typeof login.token === "string" && login.token.length > 0)
 
   try {
-    await api.iniciarSesion({ email: "admin@ensayospaes.cl", password: "clave-incorrecta" })
+    await api.iniciarSesion({ email, password: "clave-incorrecta" })
     console.log("ERROR: deberia haber lanzado ApiError")
   } catch (e) {
     console.log("login invalido -> ApiError:", e instanceof ApiError, "status:", e.status)
@@ -239,6 +254,7 @@ import("./src/api.js").then(async ({ api, ApiError }) => {
 ```
 Expected:
 ```
+registro OK, token presente: true
 login OK, token presente: true
 login invalido -> ApiError: true status: 401
 ```
@@ -1003,8 +1019,8 @@ En el navegador (`http://localhost:5173/`):
 2. Marcar el checkbox y volver a enviar → debe crear la cuenta, guardar la sesión, y navegar a `/` (mostrará el placeholder "Configurar ensayo").
 3. Verificar en devtools → Application → Local Storage que existe la clave `sesion` con el token.
 4. Recargar la página en `/` → debe seguir mostrando el placeholder (no redirige a `/login`, la sesión persiste).
-5. Borrar `localStorage` manualmente, ir a `/login`, ingresar con `admin@ensayospaes.cl` / `AdminProxmox2026` → debe loguear y navegar a `/`.
-6. Ir a `/login` de nuevo (sesión activa) e intentar con contraseña incorrecta → debe mostrar "Email o contraseña incorrectos".
+5. Borrar `localStorage` manualmente, ir a `/login`, ingresar con el mismo email/password del estudiante creado en el paso 2 (no hace falta ninguna cuenta preexistente ni contraseña de admin) → debe loguear y navegar a `/`.
+6. Ir a `/login` de nuevo (sesión activa) e intentar con ese mismo email pero contraseña incorrecta → debe mostrar "Email o contraseña incorrectos".
 
 Parar el dev server (Ctrl+C) al terminar.
 
@@ -1153,7 +1169,7 @@ Reemplazar la ruta `/`:
 cd frontend && npm run dev
 ```
 
-En el navegador, logueado como `admin@ensayospaes.cl` / `AdminProxmox2026` — **nota:** el admin no tiene rol estudiante, así que la API va a devolver 403 al intentar `POST /ensayos`; usar en cambio un usuario estudiante ya creado por el smoke test (revisar el CT: `docker compose logs api | grep estudiante` no sirve, mejor registrar un estudiante nuevo desde `/registro` para esta prueba y usar ese).
+**Nota:** el usuario admin no tiene rol estudiante, así que la API va a devolver 403 al intentar `POST /ensayos` si se prueba logueado como admin. Registrar un estudiante nuevo desde `/registro` para esta prueba y usar ese usuario (no hace falta el admin para verificar esta tarea).
 
 1. Login como estudiante, ir a `/`, elegir nivel M1, marcar el eje "Números", cantidad 10, enviar → debe navegar a `/ensayos/<id>` (mostrará el placeholder "Rendir ensayo").
 2. Volver a `/`, no marcar ningún eje, enviar → debe mostrar "Elegí al menos un eje" sin llamar a la API (verificar en la pestaña Network que no sale ningún `POST /ensayos`).
