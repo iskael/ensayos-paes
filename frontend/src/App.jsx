@@ -7,6 +7,7 @@ import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
 import RendirEnsayo from './pages/RendirEnsayo.jsx'
 import Resultado from './pages/Resultado.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import BancoExamenes from './pages/BancoExamenes.jsx'
 
 export default function App() {
   return (
@@ -49,6 +50,16 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <Dashboard />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <BancoExamenes />
             </LayoutAutenticado>
           </RutaPrivada>
         }
