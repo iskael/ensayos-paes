@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import BancoExamenes from './pages/BancoExamenes.jsx'
 import ExamenForm from './pages/ExamenForm.jsx'
 import ItemForm from './pages/ItemForm.jsx'
+import BancoItems from './pages/BancoItems.jsx'
 
 export default function App() {
   return (
@@ -82,6 +83,16 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <ExamenForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/items"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <BancoItems />
             </LayoutAutenticado>
           </RutaPrivada>
         }
