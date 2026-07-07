@@ -82,17 +82,42 @@ func LimitarBodyGlobal(maxBytes int64) func(http.Handler) http.Handler {
 	}
 }
 
-// CORS habilita llamadas desde el origen del frontend. allowedOrigin puede
-// ser "*" (desarrollo) o un origen específico (recomendado en producción).
-func CORS(allowedOrigin string) func(http.Handler) http.Handler {
+// CORS habilita llamadas desde el origen del frontend. allowedOrigins puede
+// ser "*" (cualquier origen), un origen específico, o una lista separada por
+// comas (ej. "http://localhost:5173,http://192.168.0.190"): el backend
+// refleja el origen de la request solo si está en la lista.
+func CORS(allowedOrigins string) func(http.Handler) http.Handler {
+	esComodin := allowedOrigins == "*"
+	var origenes []string
+	if !esComodin {
+		for _, o := range strings.Split(allowedOrigins, ",") {
+			o = strings.TrimSpace(o)
+			if o != "" {
+				origenes = append(origenes, o)
+			}
+		}
+	}
+	permitido := func(origen string) bool {
+		for _, o := range origenes {
+			if o == origen {
+				return true
+			}
+		}
+		return false
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-			if allowedOrigin != "*" {
+			origen := r.Header.Get("Origin")
+			switch {
+			case esComodin:
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			case origen != "" && permitido(origen):
+				w.Header().Set("Access-Control-Allow-Origin", origen)
 				w.Header().Set("Vary", "Origin")
 			}
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)
 				return
