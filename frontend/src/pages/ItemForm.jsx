@@ -106,8 +106,8 @@ export default function ItemForm() {
       datos.append('archivo', archivo)
       const { url } = await llamar((token) => api.subirImagen(token, datos))
       actualizarCampo('imagen_url', url)
-    } catch {
-      setError('No se pudo subir la imagen')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.mensaje || 'No se pudo subir la imagen' : 'No se pudo subir la imagen')
     } finally {
       setSubiendoImagen(null)
     }
@@ -123,8 +123,8 @@ export default function ItemForm() {
         ...f,
         alternativas: f.alternativas.map((a) => (a.etiqueta === etiqueta ? { ...a, imagen_url: url } : a)),
       }))
-    } catch {
-      setError('No se pudo subir la imagen')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.mensaje || 'No se pudo subir la imagen' : 'No se pudo subir la imagen')
     } finally {
       setSubiendoImagen(null)
     }
