@@ -123,3 +123,129 @@ body {
   border-color: var(--color-primario);
   background: #eaf1ff;
 }
+
+.layout-autenticado {
+  min-height: 100vh;
+}
+
+.barra-superior {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 16px;
+  background: var(--color-primario);
+  color: white;
+}
+
+.barra-superior-titulo {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.boton-hamburguesa {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer {
+  position: relative;
+  width: 80%;
+  max-width: 320px;
+  height: 100%;
+  background: var(--color-fondo);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.drawer-cerrar {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.drawer-usuario {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.drawer-usuario-nombre {
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.drawer-usuario-email {
+  color: var(--color-texto-suave);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.badge-rol {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-fondo-suave);
+  color: var(--color-primario);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.drawer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+}
+
+.drawer-links li {
+  margin-bottom: 4px;
+}
+
+.drawer-links a {
+  display: block;
+  padding: 12px 8px;
+  color: var(--color-texto);
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.drawer-links a:hover {
+  background: var(--color-fondo-suave);
+}
+
+.drawer-link-deshabilitado {
+  display: block;
+  padding: 12px 8px;
+  color: var(--color-texto-suave);
+  opacity: 0.5;
+}
+
+.drawer-logout {
+  margin-top: 16px;
+  border-top: 1px solid var(--color-borde);
+  padding-top: 16px;
+}

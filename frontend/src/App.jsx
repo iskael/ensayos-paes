@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import RutaPrivada from './components/RutaPrivada.jsx'
+import LayoutAutenticado from './components/LayoutAutenticado.jsx'
 import Login from './pages/Login.jsx'
 import Registro from './pages/Registro.jsx'
 import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
@@ -15,7 +16,9 @@ export default function App() {
         path="/"
         element={
           <RutaPrivada>
-            <ConfigurarEnsayo />
+            <LayoutAutenticado>
+              <ConfigurarEnsayo />
+            </LayoutAutenticado>
           </RutaPrivada>
         }
       />
@@ -23,7 +26,9 @@ export default function App() {
         path="/ensayos/:id"
         element={
           <RutaPrivada>
-            <RendirEnsayo />
+            <LayoutAutenticado>
+              <RendirEnsayo />
+            </LayoutAutenticado>
           </RutaPrivada>
         }
       />
@@ -31,7 +36,9 @@ export default function App() {
         path="/ensayos/:id/resultado"
         element={
           <RutaPrivada>
-            <Resultado />
+            <LayoutAutenticado>
+              <Resultado />
+            </LayoutAutenticado>
           </RutaPrivada>
         }
       />
