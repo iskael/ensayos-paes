@@ -4,6 +4,7 @@ import Login from './pages/Login.jsx'
 import Registro from './pages/Registro.jsx'
 import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
 import RendirEnsayo from './pages/RendirEnsayo.jsx'
+import Resultado from './pages/Resultado.jsx'
 
 export default function App() {
   return (
@@ -30,7 +31,7 @@ export default function App() {
         path="/ensayos/:id/resultado"
         element={
           <RutaPrivada>
-            <div>Resultado (placeholder)</div>
+            <Resultado />
           </RutaPrivada>
         }
       />
