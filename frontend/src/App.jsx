@@ -3,6 +3,7 @@ import RutaPrivada from './components/RutaPrivada.jsx'
 import Login from './pages/Login.jsx'
 import Registro from './pages/Registro.jsx'
 import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
+import RendirEnsayo from './pages/RendirEnsayo.jsx'
 
 export default function App() {
   return (
@@ -21,7 +22,7 @@ export default function App() {
         path="/ensayos/:id"
         element={
           <RutaPrivada>
-            <div>Rendir ensayo (placeholder)</div>
+            <RendirEnsayo />
           </RutaPrivada>
         }
       />
