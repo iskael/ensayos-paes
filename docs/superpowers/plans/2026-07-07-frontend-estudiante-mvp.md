@@ -178,6 +178,7 @@ export class ApiError extends Error {
     super(mensaje || 'Error de red')
     this.status = status
     this.codigo = codigo
+    this.mensaje = mensaje
     this.extra = extra
   }
 }
