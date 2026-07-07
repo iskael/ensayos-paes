@@ -8,3 +8,18 @@ export const EJES = [
   { valor: 'geometria', etiqueta: 'Geometría' },
   { valor: 'probabilidad_estadistica', etiqueta: 'Probabilidad y estadística' },
 ]
+
+export const MENU_POR_ROL = {
+  estudiante: [
+    { etiqueta: 'Configurar ensayo', ruta: '/', disponible: true },
+    { etiqueta: 'Mi progreso', ruta: null, disponible: false },
+  ],
+  profesor: [{ etiqueta: 'Mis grupos', ruta: null, disponible: false }],
+  admin: [{ etiqueta: 'Banco de preguntas', ruta: null, disponible: false }],
+}
+
+export const ETIQUETA_ROL = {
+  estudiante: 'Estudiante',
+  profesor: 'Profesor',
+  admin: 'Admin',
+}
