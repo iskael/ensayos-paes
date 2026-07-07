@@ -242,6 +242,7 @@ body {
   padding: 12px 8px;
   color: var(--color-texto-suave);
   opacity: 0.5;
+  cursor: default;
 }
 
 .drawer-logout {
