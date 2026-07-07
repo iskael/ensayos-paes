@@ -9,6 +9,10 @@ function etiquetaEje(valor) {
   return EJES.find((e) => e.valor === valor)?.etiqueta ?? valor
 }
 
+function textoAlternativa(alternativas, etiqueta) {
+  return alternativas.find((a) => a.etiqueta === etiqueta)?.texto ?? null
+}
+
 export default function Resultado() {
   const { id } = useParams()
   const { llamar } = useApi()
@@ -74,8 +78,19 @@ export default function Resultado() {
               {item.orden}. <Formula texto={item.enunciado} />
             </p>
             <p>
-              Tu respuesta: {item.respuesta_seleccionada ?? '(sin responder)'} — Correcta:{' '}
-              {item.respuesta_correcta} —{' '}
+              Tu respuesta:{' '}
+              {item.respuesta_seleccionada ? (
+                <>
+                  {item.respuesta_seleccionada}){' '}
+                  <Formula texto={textoAlternativa(item.alternativas, item.respuesta_seleccionada)} />
+                </>
+              ) : (
+                '(sin responder)'
+              )}
+              {' — '}
+              Correcta: {item.respuesta_correcta}){' '}
+              <Formula texto={textoAlternativa(item.alternativas, item.respuesta_correcta)} />
+              {' — '}
               <strong style={{ color: item.es_correcta ? 'green' : 'var(--color-error)' }}>
                 {item.es_correcta ? 'Correcta' : 'Incorrecta'}
               </strong>
