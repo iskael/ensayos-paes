@@ -279,3 +279,94 @@ body {
   text-align: center;
   margin-top: 4px;
 }
+
+.tarjeta-ancha {
+  max-width: 900px;
+}
+
+.banco-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.banco-tabla th,
+.banco-tabla td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.banco-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.banco-filtros select {
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.boton-enlace {
+  border: none;
+  background: none;
+  color: var(--color-primario);
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+
+.badge-estado-item {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-fondo-suave);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.campo textarea,
+.campo input[type='number'],
+.campo input[type='date'],
+.campo input[type='file'] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.campo textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.alternativa-campos {
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.alternativa-campos-cabecera {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.clave-suma-valida {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.clave-suma-invalida {
+  color: var(--color-error);
+  font-weight: 600;
+}

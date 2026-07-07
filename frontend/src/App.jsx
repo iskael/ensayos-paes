@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './AuthContext.jsx'
 import RutaPrivada from './components/RutaPrivada.jsx'
 import LayoutAutenticado from './components/LayoutAutenticado.jsx'
 import Login from './pages/Login.jsx'
@@ -7,6 +8,17 @@ import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
 import RendirEnsayo from './pages/RendirEnsayo.jsx'
 import Resultado from './pages/Resultado.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import BancoExamenes from './pages/BancoExamenes.jsx'
+import ExamenForm from './pages/ExamenForm.jsx'
+import ItemForm from './pages/ItemForm.jsx'
+import BancoItems from './pages/BancoItems.jsx'
+import ExamenClave from './pages/ExamenClave.jsx'
+
+function InicioPorRol() {
+  const { usuario } = useAuth()
+  if (usuario?.rol === 'admin') return <Navigate to="/banco/items" replace />
+  return <ConfigurarEnsayo />
+}
 
 export default function App() {
   return (
@@ -18,7 +30,7 @@ export default function App() {
         element={
           <RutaPrivada>
             <LayoutAutenticado>
-              <ConfigurarEnsayo />
+              <InicioPorRol />
             </LayoutAutenticado>
           </RutaPrivada>
         }
@@ -49,6 +61,76 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <Dashboard />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <BancoExamenes />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes/nuevo"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ExamenForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes/:id"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ExamenForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes/:id/clave"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ExamenClave />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/items"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <BancoItems />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/items/nuevo"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ItemForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/items/:id"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ItemForm />
             </LayoutAutenticado>
           </RutaPrivada>
         }
