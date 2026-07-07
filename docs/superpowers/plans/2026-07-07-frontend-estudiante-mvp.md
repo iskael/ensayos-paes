@@ -1018,8 +1018,8 @@ En el navegador (`http://localhost:5173/`):
 2. Marcar el checkbox y volver a enviar → debe crear la cuenta, guardar la sesión, y navegar a `/` (mostrará el placeholder "Configurar ensayo").
 3. Verificar en devtools → Application → Local Storage que existe la clave `sesion` con el token.
 4. Recargar la página en `/` → debe seguir mostrando el placeholder (no redirige a `/login`, la sesión persiste).
-5. Borrar `localStorage` manualmente, ir a `/login`, ingresar con el email del admin (`admin@ensayospaes.cl`) y su contraseña real (no commitear ni pegarla en el código; pedirla al operador si hace falta) → debe loguear y navegar a `/`.
-6. Ir a `/login` de nuevo (sesión activa) e intentar con contraseña incorrecta → debe mostrar "Email o contraseña incorrectos".
+5. Borrar `localStorage` manualmente, ir a `/login`, ingresar con el mismo email/password del estudiante creado en el paso 2 (no hace falta ninguna cuenta preexistente ni contraseña de admin) → debe loguear y navegar a `/`.
+6. Ir a `/login` de nuevo (sesión activa) e intentar con ese mismo email pero contraseña incorrecta → debe mostrar "Email o contraseña incorrectos".
 
 Parar el dev server (Ctrl+C) al terminar.
 
