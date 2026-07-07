@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import RutaPrivada from './components/RutaPrivada.jsx'
 import Login from './pages/Login.jsx'
 import Registro from './pages/Registro.jsx'
+import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
 
 export default function App() {
   return (
@@ -12,7 +13,7 @@ export default function App() {
         path="/"
         element={
           <RutaPrivada>
-            <div>Configurar ensayo (placeholder)</div>
+            <ConfigurarEnsayo />
           </RutaPrivada>
         }
       />
