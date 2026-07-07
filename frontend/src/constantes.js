@@ -9,10 +9,14 @@ export const EJES = [
   { valor: 'probabilidad_estadistica', etiqueta: 'Probabilidad y estadística' },
 ]
 
+export function etiquetaEje(valor) {
+  return EJES.find((e) => e.valor === valor)?.etiqueta ?? valor
+}
+
 export const MENU_POR_ROL = {
   estudiante: [
     { etiqueta: 'Configurar ensayo', ruta: '/', disponible: true },
-    { etiqueta: 'Mi progreso', ruta: null, disponible: false },
+    { etiqueta: 'Mi progreso', ruta: '/dashboard', disponible: true },
   ],
   profesor: [{ etiqueta: 'Mis grupos', ruta: null, disponible: false }],
   admin: [{ etiqueta: 'Banco de preguntas', ruta: null, disponible: false }],

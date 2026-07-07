@@ -6,6 +6,7 @@ import Registro from './pages/Registro.jsx'
 import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
 import RendirEnsayo from './pages/RendirEnsayo.jsx'
 import Resultado from './pages/Resultado.jsx'
+import Dashboard from './pages/Dashboard.jsx'
 
 export default function App() {
   return (
@@ -38,6 +39,16 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <Resultado />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <Dashboard />
             </LayoutAutenticado>
           </RutaPrivada>
         }

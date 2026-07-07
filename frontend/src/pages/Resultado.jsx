@@ -2,12 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import { useApi } from '../useApi.js'
-import { EJES } from '../constantes.js'
+import { etiquetaEje } from '../constantes.js'
 import Formula from '../components/Formula.jsx'
-
-function etiquetaEje(valor) {
-  return EJES.find((e) => e.valor === valor)?.etiqueta ?? valor
-}
 
 function textoAlternativa(alternativas, etiqueta) {
   return alternativas.find((a) => a.etiqueta === etiqueta)?.texto ?? null

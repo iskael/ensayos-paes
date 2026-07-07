@@ -48,4 +48,6 @@ export const api = {
     pedir(`/api/v1/ensayos/${id}/respuestas`, { metodo: 'PATCH', body, token }),
   enviarEnsayo: (token, id) => pedir(`/api/v1/ensayos/${id}/enviar`, { metodo: 'POST', token }),
   obtenerResultado: (token, id) => pedir(`/api/v1/ensayos/${id}/resultado`, { token }),
+  dashboardResumen: (token) => pedir('/api/v1/dashboard/resumen', { token }),
+  dashboardEvolucion: (token) => pedir('/api/v1/dashboard/evolucion', { token }),
 }
