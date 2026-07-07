@@ -11,6 +11,7 @@ import BancoExamenes from './pages/BancoExamenes.jsx'
 import ExamenForm from './pages/ExamenForm.jsx'
 import ItemForm from './pages/ItemForm.jsx'
 import BancoItems from './pages/BancoItems.jsx'
+import ExamenClave from './pages/ExamenClave.jsx'
 
 export default function App() {
   return (
@@ -83,6 +84,16 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <ExamenForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/examenes/:id/clave"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ExamenClave />
             </LayoutAutenticado>
           </RutaPrivada>
         }
