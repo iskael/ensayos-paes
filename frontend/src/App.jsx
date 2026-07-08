@@ -21,6 +21,7 @@ import MisGruposEstudiante from './pages/MisGruposEstudiante.jsx'
 function InicioPorRol() {
   const { usuario } = useAuth()
   if (usuario?.rol === 'admin') return <Navigate to="/banco/items" replace />
+  if (usuario?.rol === 'profesor') return <Navigate to="/grupos" replace />
   return <ConfigurarEnsayo />
 }
 
