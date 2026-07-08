@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { api, ApiError } from '../api.js'
-import { useAuth } from '../AuthContext.jsx'
 
 export default function Registro() {
   const [nombre, setNombre] = useState('')
@@ -11,28 +10,43 @@ export default function Registro() {
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
-  const { guardarSesion } = useAuth()
-  const navigate = useNavigate()
+  const [registrado, setRegistrado] = useState(false)
 
   async function alEnviar(evento) {
     evento.preventDefault()
     setError(null)
     setEnviando(true)
     try {
-      const respuesta = await api.registrar({
+      await api.registrar({
         nombre,
         email,
         password,
         rol,
         acepta_terminos: aceptaTerminos,
       })
-      guardarSesion(respuesta.token, respuesta.usuario)
-      navigate('/')
+      setRegistrado(true)
     } catch (e) {
       setError(e instanceof ApiError ? e.mensaje || 'No se pudo registrar' : 'No se pudo conectar con el servidor')
     } finally {
       setEnviando(false)
     }
+  }
+
+  if (registrado) {
+    return (
+      <div className="pantalla">
+        <div className="tarjeta">
+          <h1>Revisá tu correo</h1>
+          <p>
+            Te registraste correctamente. Te enviamos un correo a <strong>{email}</strong> para
+            confirmar tu cuenta — hacé clic en el link antes de iniciar sesión.
+          </p>
+          <p>
+            <Link to="/login">Ir a iniciar sesión</Link>
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

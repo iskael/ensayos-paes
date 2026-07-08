@@ -44,6 +44,8 @@ async function pedir(ruta, { metodo = 'GET', body, token } = {}) {
 export const api = {
   registrar: (body) => pedir('/api/v1/auth/register', { metodo: 'POST', body }),
   iniciarSesion: (body) => pedir('/api/v1/auth/login', { metodo: 'POST', body }),
+  verificarEmail: (token) => pedir('/api/v1/auth/verificar-email', { metodo: 'POST', body: { token } }),
+  reenviarVerificacion: (email) => pedir('/api/v1/auth/reenviar-verificacion', { metodo: 'POST', body: { email } }),
   crearEnsayo: (token, body) => pedir('/api/v1/ensayos', { metodo: 'POST', body, token }),
   obtenerEnsayo: (token, id) => pedir(`/api/v1/ensayos/${id}`, { token }),
   guardarRespuestas: (token, id, body) =>

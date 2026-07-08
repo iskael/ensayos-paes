@@ -43,10 +43,12 @@ paths:
             schema: { $ref: '#/components/schemas/RegistroRequest' }
       responses:
         '201':
-          description: Usuario creado
+          description: >
+            Usuario creado (sin sesión iniciada — debe verificar su email
+            antes de poder loguear)
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TokenResponse' }
+              schema: { $ref: '#/components/schemas/RegistroResponse' }
         '409': { $ref: '#/components/responses/Conflicto' }
         '422': { $ref: '#/components/responses/ValidacionFallida' }
 
@@ -68,6 +70,55 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/TokenResponse' }
         '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403':
+          description: 'Email no verificado (codigo: EMAIL_NO_VERIFICADO)'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/verificar-email:
+    post:
+      tags: [Auth]
+      operationId: verificarEmail
+      summary: Confirmar la cuenta con el token del correo de verificación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerificarEmailRequest' }
+      responses:
+        '200':
+          description: Email verificado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MensajeResponse' }
+        '422':
+          description: 'Token inválido o expirado (codigo: TOKEN_INVALIDO)'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/reenviar-verificacion:
+    post:
+      tags: [Auth]
+      operationId: reenviarVerificacion
+      summary: Reenviar el correo de verificación
+      description: >
+        Siempre responde 200 con un mensaje genérico, exista o no la cuenta,
+        y esté o no ya verificada — no revela el estado de una cuenta.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReenviarVerificacionRequest' }
+      responses:
+        '200':
+          description: Mensaje genérico (ver descripción)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MensajeResponse' }
 
   /auth/logout:
     post:
@@ -593,6 +644,24 @@ paths:
         '401': { $ref: '#/components/responses/NoAutorizado' }
         '403': { $ref: '#/components/responses/Prohibido' }
 
+  /admin/usuarios/{usuarioId}/verificar-email:
+    parameters:
+      - { $ref: '#/components/parameters/UsuarioId' }
+    post:
+      tags: [Auth]
+      operationId: verificarEmailAdmin
+      summary: Verificar el email de una cuenta manualmente (rol admin, sin correo)
+      description: Uso operativo (QA/soporte) — no tiene pantalla de frontend.
+      responses:
+        '200':
+          description: Cuenta verificada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
   # ---------------- Grupos ----------------
   /grupos:
     post:
@@ -759,6 +828,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    UsuarioId:
+      name: usuarioId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
 
   responses:
     NoAutorizado:
@@ -860,7 +934,26 @@ components:
         nombre: { type: string }
         email: { type: string, format: email }
         rol: { $ref: '#/components/schemas/Rol' }
+        email_verificado: { type: boolean }
         fecha_creacion: { type: string, format: date-time }
+    RegistroResponse:
+      type: object
+      properties:
+        mensaje: { type: string }
+    VerificarEmailRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
+    ReenviarVerificacionRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+    MensajeResponse:
+      type: object
+      properties:
+        mensaje: { type: string }
 
     # ---- Banco: examen, clave ----
     ExamenInput:

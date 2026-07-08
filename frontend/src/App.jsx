@@ -4,6 +4,7 @@ import RutaPrivada from './components/RutaPrivada.jsx'
 import LayoutAutenticado from './components/LayoutAutenticado.jsx'
 import Login from './pages/Login.jsx'
 import Registro from './pages/Registro.jsx'
+import VerificarEmail from './pages/VerificarEmail.jsx'
 import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
 import RendirEnsayo from './pages/RendirEnsayo.jsx'
 import Resultado from './pages/Resultado.jsx'
@@ -30,6 +31,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
+      <Route path="/verificar-email" element={<VerificarEmail />} />
       <Route
         path="/"
         element={

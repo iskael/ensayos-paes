@@ -61,9 +61,9 @@ func (r *Usuarios) Crear(ctx context.Context, nombre, email, hash string, rol do
 func (r *Usuarios) PorEmail(ctx context.Context, email string) (domain.Usuario, string, error) {
 	var u domain.Usuario
 	var hash, rol string
-	const q = `SELECT id::text, nombre, email, rol::text, fecha_creacion, password_hash
+	const q = `SELECT id::text, nombre, email, rol::text, email_verificado, fecha_creacion, password_hash
 	           FROM usuarios WHERE email = $1`
-	err := r.pool.QueryRow(ctx, q, email).Scan(&u.ID, &u.Nombre, &u.Email, &rol, &u.FechaCreacion, &hash)
+	err := r.pool.QueryRow(ctx, q, email).Scan(&u.ID, &u.Nombre, &u.Email, &rol, &u.EmailVerificado, &u.FechaCreacion, &hash)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Usuario{}, "", ErrNoEncontrado
 	}
@@ -77,9 +77,27 @@ func (r *Usuarios) PorEmail(ctx context.Context, email string) (domain.Usuario, 
 func (r *Usuarios) PorID(ctx context.Context, id string) (domain.Usuario, error) {
 	var u domain.Usuario
 	var rol string
-	const q = `SELECT id::text, nombre, email, rol::text, fecha_creacion
+	const q = `SELECT id::text, nombre, email, rol::text, email_verificado, fecha_creacion
 	           FROM usuarios WHERE id = $1`
-	err := r.pool.QueryRow(ctx, q, id).Scan(&u.ID, &u.Nombre, &u.Email, &rol, &u.FechaCreacion)
+	err := r.pool.QueryRow(ctx, q, id).Scan(&u.ID, &u.Nombre, &u.Email, &rol, &u.EmailVerificado, &u.FechaCreacion)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Usuario{}, ErrNoEncontrado
+	}
+	if err != nil {
+		return domain.Usuario{}, err
+	}
+	u.Rol = domain.Rol(rol)
+	return u, nil
+}
+
+// MarcarVerificado marca la cuenta como verificada sin pasar por el
+// correo — uso operativo (QA/soporte), no expuesto en ninguna pantalla.
+func (r *Usuarios) MarcarVerificado(ctx context.Context, id string) (domain.Usuario, error) {
+	const q = `UPDATE usuarios SET email_verificado = TRUE WHERE id = $1
+	           RETURNING id::text, nombre, email, rol::text, email_verificado, fecha_creacion`
+	var u domain.Usuario
+	var rol string
+	err := r.pool.QueryRow(ctx, q, id).Scan(&u.ID, &u.Nombre, &u.Email, &rol, &u.EmailVerificado, &u.FechaCreacion)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Usuario{}, ErrNoEncontrado
 	}
