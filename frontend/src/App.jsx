@@ -13,6 +13,7 @@ import ExamenForm from './pages/ExamenForm.jsx'
 import ItemForm from './pages/ItemForm.jsx'
 import BancoItems from './pages/BancoItems.jsx'
 import ExamenClave from './pages/ExamenClave.jsx'
+import MisGruposProfesor from './pages/MisGruposProfesor.jsx'
 
 function InicioPorRol() {
   const { usuario } = useAuth()
@@ -131,6 +132,16 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <ItemForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/grupos"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <MisGruposProfesor />
             </LayoutAutenticado>
           </RutaPrivada>
         }
