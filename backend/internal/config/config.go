@@ -14,6 +14,12 @@ type Config struct {
 	UploadsDir    string
 	UploadsURL    string
 	AllowedOrigin string
+	SMTPHost      string
+	SMTPPort      string
+	SMTPUsuario   string
+	SMTPPassword  string
+	SMTPRemitente string
+	AppBaseURL    string
 }
 
 func Load() Config {
@@ -25,6 +31,12 @@ func Load() Config {
 		UploadsDir:    getenv("UPLOADS_DIR", "./uploads"),
 		UploadsURL:    getenv("UPLOADS_URL", "http://localhost:8080/uploads"),
 		AllowedOrigin: getenv("CORS_ALLOWED_ORIGIN", "*"),
+		SMTPHost:      getenv("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:      getenv("SMTP_PORT", "587"),
+		SMTPUsuario:   getenv("SMTP_USUARIO", ""),
+		SMTPPassword:  getenv("SMTP_PASSWORD", ""),
+		SMTPRemitente: getenv("SMTP_REMITENTE", "Ensayos PAES <no-responder@ensayospaes.cl>"),
+		AppBaseURL:    getenv("APP_BASE_URL", "http://localhost:5173"),
 	}
 }
 
