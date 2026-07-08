@@ -16,6 +16,7 @@ import ExamenClave from './pages/ExamenClave.jsx'
 import MisGruposProfesor from './pages/MisGruposProfesor.jsx'
 import GrupoDetalle from './pages/GrupoDetalle.jsx'
 import ProgresoEstudianteGrupo from './pages/ProgresoEstudianteGrupo.jsx'
+import MisGruposEstudiante from './pages/MisGruposEstudiante.jsx'
 
 function InicioPorRol() {
   const { usuario } = useAuth()
@@ -164,6 +165,16 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <ProgresoEstudianteGrupo />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/mis-grupos"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <MisGruposEstudiante />
             </LayoutAutenticado>
           </RutaPrivada>
         }
