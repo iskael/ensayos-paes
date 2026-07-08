@@ -83,4 +83,12 @@ export const api = {
   publicarItem: (token, id) => pedir(`/api/v1/items/${id}/publicar`, { metodo: 'POST', token }),
   ocultarItem: (token, id) => pedir(`/api/v1/items/${id}/ocultar`, { metodo: 'POST', token }),
   subirImagen: (token, formData) => pedir('/api/v1/imagenes', { metodo: 'POST', body: formData, token }),
+  crearGrupo: (token, body) => pedir('/api/v1/grupos', { metodo: 'POST', body, token }),
+  listarGrupos: (token) => pedir('/api/v1/grupos', { token }),
+  unirseGrupo: (token, codigo) => pedir('/api/v1/grupos/unirse', { metodo: 'POST', body: { codigo }, token }),
+  obtenerGrupo: (token, id) => pedir(`/api/v1/grupos/${id}`, { token }),
+  listarMiembros: (token, id) => pedir(`/api/v1/grupos/${id}/miembros`, { token }),
+  progresoEstudiante: (token, grupoId, estudianteId) =>
+    pedir(`/api/v1/grupos/${grupoId}/estudiantes/${estudianteId}`, { token }),
+  misGrupos: (token) => pedir('/api/v1/grupos/mis-grupos', { token }),
 }

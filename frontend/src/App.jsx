@@ -13,10 +13,15 @@ import ExamenForm from './pages/ExamenForm.jsx'
 import ItemForm from './pages/ItemForm.jsx'
 import BancoItems from './pages/BancoItems.jsx'
 import ExamenClave from './pages/ExamenClave.jsx'
+import MisGruposProfesor from './pages/MisGruposProfesor.jsx'
+import GrupoDetalle from './pages/GrupoDetalle.jsx'
+import ProgresoEstudianteGrupo from './pages/ProgresoEstudianteGrupo.jsx'
+import MisGruposEstudiante from './pages/MisGruposEstudiante.jsx'
 
 function InicioPorRol() {
   const { usuario } = useAuth()
   if (usuario?.rol === 'admin') return <Navigate to="/banco/items" replace />
+  if (usuario?.rol === 'profesor') return <Navigate to="/grupos" replace />
   return <ConfigurarEnsayo />
 }
 
@@ -131,6 +136,46 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <ItemForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/grupos"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <MisGruposProfesor />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/grupos/:id"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <GrupoDetalle />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/grupos/:id/estudiantes/:estudianteId"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <ProgresoEstudianteGrupo />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/mis-grupos"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <MisGruposEstudiante />
             </LayoutAutenticado>
           </RutaPrivada>
         }

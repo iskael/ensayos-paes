@@ -152,3 +152,37 @@ func (r *Grupos) EsMiembro(ctx context.Context, grupoID, estudianteID string) (b
 	err := r.pool.QueryRow(ctx, q, grupoID, estudianteID).Scan(&existe)
 	return existe, err
 }
+
+type GrupoConProfesor struct {
+	ID             string
+	Nombre         string
+	ProfesorNombre string
+	FechaUnion     time.Time
+}
+
+// ListarPorEstudiante devuelve los grupos a los que pertenece un estudiante,
+// con el nombre del profesor dueño, ordenados por fecha de unión (más
+// reciente primero).
+func (r *Grupos) ListarPorEstudiante(ctx context.Context, estudianteID string) ([]GrupoConProfesor, error) {
+	const q = `SELECT g.id::text, g.nombre, u.nombre, gm.fecha_union
+	           FROM grupo_miembros gm
+	           JOIN grupos g ON g.id = gm.grupo_id
+	           JOIN usuarios u ON u.id = g.profesor_id
+	           WHERE gm.estudiante_id = $1
+	           ORDER BY gm.fecha_union DESC`
+	rows, err := r.pool.Query(ctx, q, estudianteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []GrupoConProfesor{}
+	for rows.Next() {
+		var g GrupoConProfesor
+		if err := rows.Scan(&g.ID, &g.Nombre, &g.ProfesorNombre, &g.FechaUnion); err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}

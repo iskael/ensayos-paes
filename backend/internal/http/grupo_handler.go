@@ -276,3 +276,24 @@ func (h *grupoHandler) progresoEstudiante(w http.ResponseWriter, r *http.Request
 		"desempeno_por_eje": desgloseRespDe(items),
 	})
 }
+
+type grupoEstudianteResp struct {
+	ID             string    `json:"id"`
+	Nombre         string    `json:"nombre"`
+	ProfesorNombre string    `json:"profesor_nombre"`
+	FechaUnion     time.Time `json:"fecha_union"`
+}
+
+func (h *grupoHandler) misGrupos(w http.ResponseWriter, r *http.Request) {
+	claims, _ := claimsDe(r.Context())
+	lista, err := h.grupos.ListarPorEstudiante(r.Context(), claims.UsuarioID)
+	if err != nil {
+		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo listar los grupos")
+		return
+	}
+	out := make([]grupoEstudianteResp, 0, len(lista))
+	for _, g := range lista {
+		out = append(out, grupoEstudianteResp{ID: g.ID, Nombre: g.Nombre, ProfesorNombre: g.ProfesorNombre, FechaUnion: g.FechaUnion})
+	}
+	escribirJSON(w, http.StatusOK, out)
+}
