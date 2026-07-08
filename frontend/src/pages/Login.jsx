@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { api, ApiError } from '../api.js'
 import { useAuth } from '../AuthContext.jsx'
+import { useReenviarVerificacion } from '../useReenviarVerificacion.js'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -9,8 +10,7 @@ export default function Login() {
   const [error, setError] = useState(null)
   const [emailNoVerificado, setEmailNoVerificado] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [reenviando, setReenviando] = useState(false)
-  const [mensajeReenvio, setMensajeReenvio] = useState(null)
+  const { reenviando, mensajeReenvio, reenviar } = useReenviarVerificacion()
   const { guardarSesion } = useAuth()
   const navigate = useNavigate()
 
@@ -18,7 +18,6 @@ export default function Login() {
     evento.preventDefault()
     setError(null)
     setEmailNoVerificado(false)
-    setMensajeReenvio(null)
     setEnviando(true)
     try {
       const respuesta = await api.iniciarSesion({ email, password })
@@ -34,19 +33,6 @@ export default function Login() {
       }
     } finally {
       setEnviando(false)
-    }
-  }
-
-  async function alReenviar() {
-    setReenviando(true)
-    setMensajeReenvio(null)
-    try {
-      const respuesta = await api.reenviarVerificacion(email)
-      setMensajeReenvio(respuesta.mensaje)
-    } catch {
-      setMensajeReenvio('No se pudo reenviar el correo, intentá de nuevo más tarde.')
-    } finally {
-      setReenviando(false)
     }
   }
 
@@ -77,7 +63,7 @@ export default function Login() {
                 type="button"
                 className="boton-secundario"
                 disabled={reenviando}
-                onClick={alReenviar}
+                onClick={() => reenviar(email)}
               >
                 {reenviando ? 'Reenviando…' : 'Reenviar verificación'}
               </button>

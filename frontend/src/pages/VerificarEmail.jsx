@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { api, ApiError } from '../api.js'
+import { useReenviarVerificacion } from '../useReenviarVerificacion.js'
 
 export default function VerificarEmail() {
   const [searchParams] = useSearchParams()
@@ -9,8 +10,7 @@ export default function VerificarEmail() {
   const [estado, setEstado] = useState('cargando')
   const [mensaje, setMensaje] = useState(null)
   const [email, setEmail] = useState('')
-  const [reenviando, setReenviando] = useState(false)
-  const [mensajeReenvio, setMensajeReenvio] = useState(null)
+  const { reenviando, mensajeReenvio, reenviar } = useReenviarVerificacion()
 
   useEffect(() => {
     if (!token) {
@@ -36,18 +36,9 @@ export default function VerificarEmail() {
     }
   }, [token])
 
-  async function alReenviar(evento) {
+  function alReenviar(evento) {
     evento.preventDefault()
-    setReenviando(true)
-    setMensajeReenvio(null)
-    try {
-      const respuesta = await api.reenviarVerificacion(email)
-      setMensajeReenvio(respuesta.mensaje)
-    } catch {
-      setMensajeReenvio('No se pudo reenviar el correo, intentá de nuevo más tarde.')
-    } finally {
-      setReenviando(false)
-    }
+    reenviar(email)
   }
 
   if (estado === 'cargando') {

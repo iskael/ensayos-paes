@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -82,7 +83,11 @@ func (h *authHandler) registrar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.enviarCorreoVerificacion(r, u)
+	// Se despacha en segundo plano: un error de envío ya se loguea y nunca
+	// se propaga (ver enviarCorreoVerificacion), así que no hay razón para
+	// que la respuesta espere el round-trip SMTP. context.WithoutCancel
+	// evita que se cancele cuando termine esta request.
+	go h.enviarCorreoVerificacion(context.WithoutCancel(r.Context()), u)
 
 	escribirJSON(w, http.StatusCreated, mensajeResp{
 		Mensaje: "Te registraste correctamente. Revisá tu correo para verificar tu cuenta antes de iniciar sesión.",
@@ -91,8 +96,8 @@ func (h *authHandler) registrar(w http.ResponseWriter, r *http.Request) {
 
 // enviarCorreoVerificacion genera el token y envía el correo. Un error acá
 // se loguea pero NUNCA se propaga — no debe hacer fallar el registro.
-func (h *authHandler) enviarCorreoVerificacion(r *http.Request, u domain.Usuario) {
-	token, err := h.verificaciones.Crear(r.Context(), u.ID)
+func (h *authHandler) enviarCorreoVerificacion(ctx context.Context, u domain.Usuario) {
+	token, err := h.verificaciones.Crear(ctx, u.ID)
 	if err != nil {
 		log.Printf("no se pudo generar el token de verificación para %s: %v", u.Email, err)
 		return
@@ -162,7 +167,7 @@ func (h *authHandler) reenviarVerificacion(w http.ResponseWriter, r *http.Reques
 
 	u, _, err := h.usuarios.PorEmail(r.Context(), email)
 	if err == nil && !u.EmailVerificado {
-		h.enviarCorreoVerificacion(r, u)
+		go h.enviarCorreoVerificacion(context.WithoutCancel(r.Context()), u)
 	}
 
 	escribirJSON(w, http.StatusOK, mensajeResp{
