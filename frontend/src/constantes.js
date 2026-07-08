@@ -35,8 +35,9 @@ export const MENU_POR_ROL = {
   estudiante: [
     { etiqueta: 'Configurar ensayo', ruta: '/', disponible: true },
     { etiqueta: 'Mi progreso', ruta: '/dashboard', disponible: true },
+    { etiqueta: 'Mis grupos', ruta: '/mis-grupos', disponible: true },
   ],
-  profesor: [{ etiqueta: 'Mis grupos', ruta: null, disponible: false }],
+  profesor: [{ etiqueta: 'Mis grupos', ruta: '/grupos', disponible: true }],
   admin: [{ etiqueta: 'Banco de preguntas', ruta: '/banco/items', disponible: true }],
 }
 
