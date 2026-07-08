@@ -7,22 +7,46 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
+  const [emailNoVerificado, setEmailNoVerificado] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  const [reenviando, setReenviando] = useState(false)
+  const [mensajeReenvio, setMensajeReenvio] = useState(null)
   const { guardarSesion } = useAuth()
   const navigate = useNavigate()
 
   async function alEnviar(evento) {
     evento.preventDefault()
     setError(null)
+    setEmailNoVerificado(false)
+    setMensajeReenvio(null)
     setEnviando(true)
     try {
       const respuesta = await api.iniciarSesion({ email, password })
       guardarSesion(respuesta.token, respuesta.usuario)
       navigate('/')
     } catch (e) {
-      setError(e instanceof ApiError && e.status === 401 ? 'Email o contraseña incorrectos' : 'No se pudo conectar con el servidor')
+      if (e instanceof ApiError && e.codigo === 'EMAIL_NO_VERIFICADO') {
+        setEmailNoVerificado(true)
+      } else if (e instanceof ApiError && e.status === 401) {
+        setError('Email o contraseña incorrectos')
+      } else {
+        setError('No se pudo conectar con el servidor')
+      }
     } finally {
       setEnviando(false)
+    }
+  }
+
+  async function alReenviar() {
+    setReenviando(true)
+    setMensajeReenvio(null)
+    try {
+      const respuesta = await api.reenviarVerificacion(email)
+      setMensajeReenvio(respuesta.mensaje)
+    } catch {
+      setMensajeReenvio('No se pudo reenviar el correo, intentá de nuevo más tarde.')
+    } finally {
+      setReenviando(false)
     }
   }
 
@@ -46,6 +70,20 @@ export default function Login() {
             />
           </div>
           {error && <p className="error">{error}</p>}
+          {emailNoVerificado && (
+            <div className="campo">
+              <p className="error">Todavía no verificaste tu email.</p>
+              <button
+                type="button"
+                className="boton-secundario"
+                disabled={reenviando}
+                onClick={alReenviar}
+              >
+                {reenviando ? 'Reenviando…' : 'Reenviar verificación'}
+              </button>
+              {mensajeReenvio && <p>{mensajeReenvio}</p>}
+            </div>
+          )}
           <button className="boton" type="submit" disabled={enviando}>
             {enviando ? 'Ingresando…' : 'Ingresar'}
           </button>
