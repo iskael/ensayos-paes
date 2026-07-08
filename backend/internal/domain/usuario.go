@@ -19,9 +19,10 @@ func (r Rol) Valido() bool {
 }
 
 type Usuario struct {
-	ID            string    `json:"id"`
-	Nombre        string    `json:"nombre"`
-	Email         string    `json:"email"`
-	Rol           Rol       `json:"rol"`
-	FechaCreacion time.Time `json:"fecha_creacion"`
+	ID              string    `json:"id"`
+	Nombre          string    `json:"nombre"`
+	Email           string    `json:"email"`
+	Rol             Rol       `json:"rol"`
+	EmailVerificado bool      `json:"email_verificado"`
+	FechaCreacion   time.Time `json:"fecha_creacion"`
 }
