@@ -9,6 +9,7 @@ import (
 	"github.com/usuario/ensayos-paes/internal/config"
 	"github.com/usuario/ensayos-paes/internal/db"
 	httpx "github.com/usuario/ensayos-paes/internal/http"
+	"github.com/usuario/ensayos-paes/internal/mailer"
 	"github.com/usuario/ensayos-paes/internal/repo"
 	"github.com/usuario/ensayos-paes/internal/storage"
 )
@@ -21,6 +22,9 @@ func main() {
 	}
 	if cfg.AllowedOrigin == "*" {
 		log.Println("ADVERTENCIA: CORS_ALLOWED_ORIGIN='*' (cualquier origen). Configúrelo al dominio del frontend en producción.")
+	}
+	if cfg.SMTPUsuario == "" || cfg.SMTPPassword == "" {
+		log.Println("ADVERTENCIA: SMTP_USUARIO/SMTP_PASSWORD no configurados. El envío de correos de verificación fallará (se registrará en el log, no bloquea el registro).")
 	}
 
 	ctx := context.Background()
@@ -35,17 +39,28 @@ func main() {
 		log.Fatalf("storage: %v", err)
 	}
 
+	correo := mailer.New(mailer.Config{
+		Host:       cfg.SMTPHost,
+		Port:       cfg.SMTPPort,
+		Usuario:    cfg.SMTPUsuario,
+		Password:   cfg.SMTPPassword,
+		Remitente:  cfg.SMTPRemitente,
+		AppBaseURL: cfg.AppBaseURL,
+	})
+
 	deps := httpx.Deps{
-		Usuarios:      repo.NewUsuarios(pool),
-		Examenes:      repo.NewExamenes(pool),
-		Items:         repo.NewItems(pool),
-		Clave:         repo.NewClave(pool),
-		Ensayos:       repo.NewEnsayos(pool),
-		Grupos:        repo.NewGrupos(pool),
-		Imagenes:      imagenes,
-		UploadsDir:    cfg.UploadsDir,
-		JWT:           auth.NewManager(cfg.JWTSecret, cfg.JWTTTL),
-		AllowedOrigin: cfg.AllowedOrigin,
+		Usuarios:       repo.NewUsuarios(pool),
+		Examenes:       repo.NewExamenes(pool),
+		Items:          repo.NewItems(pool),
+		Clave:          repo.NewClave(pool),
+		Ensayos:        repo.NewEnsayos(pool),
+		Grupos:         repo.NewGrupos(pool),
+		Verificaciones: repo.NewVerificaciones(pool),
+		Imagenes:       imagenes,
+		Mailer:         correo,
+		UploadsDir:     cfg.UploadsDir,
+		JWT:            auth.NewManager(cfg.JWTSecret, cfg.JWTTTL),
+		AllowedOrigin:  cfg.AllowedOrigin,
 	}
 	handler := httpx.New(deps)
 

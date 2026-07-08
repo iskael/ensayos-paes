@@ -10,21 +10,24 @@ import (
 
 	"github.com/usuario/ensayos-paes/internal/auth"
 	"github.com/usuario/ensayos-paes/internal/domain"
+	"github.com/usuario/ensayos-paes/internal/mailer"
 	"github.com/usuario/ensayos-paes/internal/repo"
 	"github.com/usuario/ensayos-paes/internal/storage"
 )
 
 type Deps struct {
-	Usuarios      *repo.Usuarios
-	Examenes      *repo.Examenes
-	Items         *repo.Items
-	Clave         *repo.Clave
-	Ensayos       *repo.Ensayos
-	Grupos        *repo.Grupos
-	Imagenes      *storage.Imagenes
-	UploadsDir    string
-	JWT           *auth.Manager
-	AllowedOrigin string
+	Usuarios       *repo.Usuarios
+	Examenes       *repo.Examenes
+	Items          *repo.Items
+	Clave          *repo.Clave
+	Ensayos        *repo.Ensayos
+	Grupos         *repo.Grupos
+	Verificaciones *repo.Verificaciones
+	Imagenes       *storage.Imagenes
+	Mailer         *mailer.Mailer
+	UploadsDir     string
+	JWT            *auth.Manager
+	AllowedOrigin  string
 }
 
 func New(d Deps) http.Handler {
@@ -45,16 +48,19 @@ func New(d Deps) http.Handler {
 		r.Handle("/uploads/*", fs)
 	}
 
-	authH := &authHandler{usuarios: d.Usuarios, jwt: d.JWT}
+	authH := &authHandler{usuarios: d.Usuarios, jwt: d.JWT, mailer: d.Mailer, verificaciones: d.Verificaciones}
 	bancoH := &bancoHandler{examenes: d.Examenes, items: d.Items, clave: d.Clave, imagenes: d.Imagenes}
 	ensayoH := &ensayoHandler{ensayos: d.Ensayos}
 	dashboardH := &dashboardHandler{ensayos: d.Ensayos}
 	grupoH := &grupoHandler{grupos: d.Grupos, ensayos: d.Ensayos}
 	limitadorLogin := nuevoLimitadorTasa(10, time.Minute)
+	limitadorReenvio := nuevoLimitadorTasa(5, time.Minute)
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Post("/auth/register", authH.registrar)
 		api.With(LimitarTasa(limitadorLogin)).Post("/auth/login", authH.login)
+		api.Post("/auth/verificar-email", authH.verificarEmail)
+		api.With(LimitarTasa(limitadorReenvio)).Post("/auth/reenviar-verificacion", authH.reenviarVerificacion)
 
 		api.Group(func(priv chi.Router) {
 			priv.Use(Autenticar(d.JWT))
