@@ -650,6 +650,22 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
+  /grupos/mis-grupos:
+    get:
+      tags: [Grupos]
+      operationId: misGrupos
+      summary: Listar los grupos del estudiante autenticado
+      responses:
+        '200':
+          description: Grupos del estudiante
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/GrupoEstudiante' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
   /grupos/{grupoId}:
     parameters:
       - { $ref: '#/components/parameters/GrupoId' }
@@ -1120,6 +1136,13 @@ components:
         desempeno_por_eje:
           type: array
           items: { $ref: '#/components/schemas/DesgloseEje' }
+    GrupoEstudiante:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        profesor_nombre: { type: string }
+        fecha_union: { type: string, format: date-time }
 
     # ---- Errores ----
     Error:

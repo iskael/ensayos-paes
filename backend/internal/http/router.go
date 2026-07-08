@@ -120,6 +120,7 @@ func New(d Deps) http.Handler {
 				gr.With(RequerirRol(domain.RolProfesor)).Post("/", grupoH.crear)
 				gr.With(RequerirRol(domain.RolProfesor)).Get("/", grupoH.listar)
 				gr.With(RequerirRol(domain.RolEstudiante)).Post("/unirse", grupoH.unirse)
+				gr.With(RequerirRol(domain.RolEstudiante)).Get("/mis-grupos", grupoH.misGrupos)
 
 				gr.Route("/{grupoId}", func(gid chi.Router) {
 					gid.Use(RequerirRol(domain.RolProfesor))
