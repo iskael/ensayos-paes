@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Smoke test end-to-end del MVP Ensayos PAES.
-# Requiere: curl, jq. Requiere el servidor corriendo (go run ./cmd/api) y un
-# admin ya creado (ver cmd/seed-admin).
+# Requiere: curl, jq. Requiere el servidor corriendo (go run ./cmd/api), un
+# admin ya creado (ver cmd/seed-admin) y el stack de docker compose
+# levantado (usa `docker compose exec db psql` para verificar por admin las
+# cuentas nuevas, ya que /auth/register ya no hace login automático).
 #
 # Uso:
 #   ./scripts/smoke_test.sh <admin_email> <admin_password>
@@ -57,11 +59,9 @@ EST_EMAIL="estudiante$SUFIJO@test.cl"
 
 llamar POST "$API/auth/register" "{\"nombre\":\"Profesor Demo\",\"email\":\"$PROF_EMAIL\",\"password\":\"claveClave123\",\"rol\":\"profesor\",\"acepta_terminos\":true}"
 exigir_status 201 "profesor registrado"
-PROF_TOKEN=$(echo "$RESP_BODY" | jq -r .token)
 
 llamar POST "$API/auth/register" "{\"nombre\":\"Estudiante Demo\",\"email\":\"$EST_EMAIL\",\"password\":\"claveClave123\",\"rol\":\"estudiante\",\"acepta_terminos\":true}"
 exigir_status 201 "estudiante registrado"
-EST_TOKEN=$(echo "$RESP_BODY" | jq -r .token)
 
 # ---------- 4. Login admin ----------
 paso "4. Login admin"
@@ -69,14 +69,35 @@ llamar POST "$API/auth/login" "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN
 exigir_status 200 "login admin"
 ADMIN_TOKEN=$(echo "$RESP_BODY" | jq -r .token)
 
-# ---------- 5. Crear examen fuente ----------
-paso "5. Crear examen fuente"
+# ---------- 5. Verificar email de profesor y estudiante (admin, sin correo) ----------
+paso "5. Verificar cuentas nuevas vía admin (sin flujo de correo)"
+PROF_ID=$(docker compose exec -T db psql -U ensayos -d ensayos_paes -tAc "SELECT id FROM usuarios WHERE email='$PROF_EMAIL'" | tr -d '[:space:]')
+EST_ID=$(docker compose exec -T db psql -U ensayos -d ensayos_paes -tAc "SELECT id FROM usuarios WHERE email='$EST_EMAIL'" | tr -d '[:space:]')
+
+llamar POST "$API/admin/usuarios/$PROF_ID/verificar-email" "" "$ADMIN_TOKEN"
+exigir_status 200 "profesor verificado (admin, sin correo)"
+
+llamar POST "$API/admin/usuarios/$EST_ID/verificar-email" "" "$ADMIN_TOKEN"
+exigir_status 200 "estudiante verificado (admin, sin correo)"
+
+# ---------- 6. Login profesor y estudiante ----------
+paso "6. Login profesor y estudiante"
+llamar POST "$API/auth/login" "{\"email\":\"$PROF_EMAIL\",\"password\":\"claveClave123\"}"
+exigir_status 200 "login profesor"
+PROF_TOKEN=$(echo "$RESP_BODY" | jq -r .token)
+
+llamar POST "$API/auth/login" "{\"email\":\"$EST_EMAIL\",\"password\":\"claveClave123\"}"
+exigir_status 200 "login estudiante"
+EST_TOKEN=$(echo "$RESP_BODY" | jq -r .token)
+
+# ---------- 7. Crear examen fuente ----------
+paso "7. Crear examen fuente"
 llamar POST "$API/examenes" "{\"nombre\":\"Examen Demo Smoke Test\",\"anio_admision\":2026,\"tipo\":\"PAES_Regular\",\"nivel\":\"M1\"}" "$ADMIN_TOKEN"
 exigir_status 201 "examen creado"
 EXAMEN_ID=$(echo "$RESP_BODY" | jq -r .id)
 
-# ---------- 6. Crear 10 ítems (eje numeros, M1) ----------
-paso "6. Crear 10 ítems (eje numeros, M1) con 4 alternativas cada uno"
+# ---------- 8. Crear 10 ítems (eje numeros, M1) ----------
+paso "8. Crear 10 ítems (eje numeros, M1) con 4 alternativas cada uno"
 ITEM_IDS=()
 for i in $(seq 1 10); do
   BODY=$(cat <<JSON
@@ -100,47 +121,47 @@ JSON
   ITEM_IDS+=("$(echo "$RESP_BODY" | jq -r .id)")
 done
 
-# ---------- 7. Definir clave (10 x 100 = 1000) ----------
-paso "7. Definir clave del examen (10 ítems x 100 = 1000)"
+# ---------- 9. Definir clave (10 x 100 = 1000) ----------
+paso "9. Definir clave del examen (10 ítems x 100 = 1000)"
 PESOS_JSON=$(printf '%s\n' "${ITEM_IDS[@]}" | jq -R -s 'split("\n") | map(select(length > 0)) | map({item_id: ., peso: 100})')
 llamar PUT "$API/examenes/$EXAMEN_ID/clave" "{\"pesos\": $PESOS_JSON}" "$ADMIN_TOKEN"
 exigir_status 200 "clave definida"
 
-# ---------- 8. Publicar los 10 ítems ----------
-paso "8. Publicar los 10 ítems"
+# ---------- 10. Publicar los 10 ítems ----------
+paso "10. Publicar los 10 ítems"
 for id in "${ITEM_IDS[@]}"; do
   llamar POST "$API/items/$id/publicar" "" "$ADMIN_TOKEN"
   exigir_status 200 "ítem $id publicado"
 done
 
-# ---------- 9. Estudiante genera un ensayo ----------
-paso "9. Estudiante genera un ensayo de 10 preguntas (eje numeros, M1)"
+# ---------- 11. Estudiante genera un ensayo ----------
+paso "11. Estudiante genera un ensayo de 10 preguntas (eje numeros, M1)"
 llamar POST "$API/ensayos" "{\"nivel\":\"M1\",\"ejes\":[\"numeros\"],\"cantidad\":10}" "$EST_TOKEN"
 exigir_status 201 "ensayo generado"
 ENSAYO_ID=$(echo "$RESP_BODY" | jq -r .id)
 CANT_PREGUNTAS=$(echo "$RESP_BODY" | jq '.preguntas | length')
 echo "  preguntas en el ensayo: $CANT_PREGUNTAS (debería ser 10)"
 
-# ---------- 10. Responder todas con "A" (la marcada como correcta) ----------
-paso "10. Guardar respuestas (todas 'A')"
+# ---------- 12. Responder todas con "A" (la marcada como correcta) ----------
+paso "12. Guardar respuestas (todas 'A')"
 RESPUESTAS_JSON=$(echo "$RESP_BODY" | jq '[.preguntas[] | {ensayo_item_id: .ensayo_item_id, respuesta_seleccionada: "A"}]')
 llamar PATCH "$API/ensayos/$ENSAYO_ID/respuestas" "{\"respuestas\": $RESPUESTAS_JSON}" "$EST_TOKEN"
 exigir_status 204 "respuestas guardadas"
 
-# ---------- 11. Enviar y corregir ----------
-paso "11. Enviar el ensayo (corrige y calcula puntaje)"
+# ---------- 13. Enviar y corregir ----------
+paso "13. Enviar el ensayo (corrige y calcula puntaje)"
 llamar POST "$API/ensayos/$ENSAYO_ID/enviar" "" "$EST_TOKEN"
 exigir_status 200 "ensayo corregido"
 PUNTAJE=$(echo "$RESP_BODY" | jq .puntaje)
 echo "  puntaje obtenido: $PUNTAJE / 1000 (esperado 1000: todas las respuestas 'A' eran la correcta)"
 
-# ---------- 12. Consultar resultado ----------
-paso "12. Consultar resultado con revisión y desglose por eje"
+# ---------- 14. Consultar resultado ----------
+paso "14. Consultar resultado con revisión y desglose por eje"
 llamar GET "$API/ensayos/$ENSAYO_ID/resultado" "" "$EST_TOKEN"
 exigir_status 200 "resultado obtenido"
 
-# ---------- 13. Dashboard del estudiante ----------
-paso "13. Dashboard del estudiante"
+# ---------- 15. Dashboard del estudiante ----------
+paso "15. Dashboard del estudiante"
 llamar GET "$API/dashboard/resumen" "" "$EST_TOKEN"
 exigir_status 200 "resumen del dashboard"
 echo "$RESP_BODY" | jq .
@@ -148,19 +169,19 @@ echo "$RESP_BODY" | jq .
 llamar GET "$API/dashboard/evolucion" "" "$EST_TOKEN"
 exigir_status 200 "evolución del dashboard"
 
-# ---------- 14. Grupos: crear, unirse, consultar ----------
-paso "14. Profesor crea un grupo"
+# ---------- 16. Grupos: crear, unirse, consultar ----------
+paso "16. Profesor crea un grupo"
 llamar POST "$API/grupos" "{\"nombre\":\"Curso Demo $SUFIJO\"}" "$PROF_TOKEN"
 exigir_status 201 "grupo creado"
 CODIGO=$(echo "$RESP_BODY" | jq -r .codigo_invitacion)
 GRUPO_ID=$(echo "$RESP_BODY" | jq -r .id)
 echo "  código de invitación: $CODIGO"
 
-paso "15. Estudiante se une al grupo"
+paso "17. Estudiante se une al grupo"
 llamar POST "$API/grupos/unirse" "{\"codigo\":\"$CODIGO\"}" "$EST_TOKEN"
 exigir_status 200 "estudiante unido al grupo"
 
-paso "16. Profesor consulta el grupo (detalle y miembros)"
+paso "18. Profesor consulta el grupo (detalle y miembros)"
 llamar GET "$API/grupos/$GRUPO_ID" "" "$PROF_TOKEN"
 exigir_status 200 "detalle del grupo"
 echo "$RESP_BODY" | jq .
