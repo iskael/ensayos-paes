@@ -97,6 +97,7 @@ func New(d Deps) http.Handler {
 				})
 
 				admin.Post("/imagenes", bancoH.subirImagen)
+				admin.Post("/usuarios/{usuarioId}/verificar-email", authH.verificarEmailAdmin)
 			})
 
 			priv.Group(func(est chi.Router) {

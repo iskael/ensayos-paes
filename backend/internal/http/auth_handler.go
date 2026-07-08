@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/usuario/ensayos-paes/internal/auth"
 	"github.com/usuario/ensayos-paes/internal/domain"
 	"github.com/usuario/ensayos-paes/internal/mailer"
@@ -193,4 +195,18 @@ func decodificar(w http.ResponseWriter, r *http.Request, v any) bool {
 		return false
 	}
 	return true
+}
+
+func (h *authHandler) verificarEmailAdmin(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "usuarioId")
+	u, err := h.usuarios.MarcarVerificado(r.Context(), id)
+	if errors.Is(err, repo.ErrNoEncontrado) {
+		escribirError(w, http.StatusNotFound, "NO_ENCONTRADO", "Usuario no encontrado")
+		return
+	}
+	if err != nil {
+		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo verificar la cuenta")
+		return
+	}
+	escribirJSON(w, http.StatusOK, u)
 }

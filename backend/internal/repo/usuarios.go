@@ -89,3 +89,21 @@ func (r *Usuarios) PorID(ctx context.Context, id string) (domain.Usuario, error)
 	u.Rol = domain.Rol(rol)
 	return u, nil
 }
+
+// MarcarVerificado marca la cuenta como verificada sin pasar por el
+// correo — uso operativo (QA/soporte), no expuesto en ninguna pantalla.
+func (r *Usuarios) MarcarVerificado(ctx context.Context, id string) (domain.Usuario, error) {
+	const q = `UPDATE usuarios SET email_verificado = TRUE WHERE id = $1
+	           RETURNING id::text, nombre, email, rol::text, email_verificado, fecha_creacion`
+	var u domain.Usuario
+	var rol string
+	err := r.pool.QueryRow(ctx, q, id).Scan(&u.ID, &u.Nombre, &u.Email, &rol, &u.EmailVerificado, &u.FechaCreacion)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Usuario{}, ErrNoEncontrado
+	}
+	if err != nil {
+		return domain.Usuario{}, err
+	}
+	u.Rol = domain.Rol(rol)
+	return u, nil
+}
