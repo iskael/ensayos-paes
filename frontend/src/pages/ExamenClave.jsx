@@ -10,6 +10,7 @@ export default function ExamenClave() {
   const { llamar } = useApi()
   const [items, setItems] = useState(null)
   const [pesos, setPesos] = useState({})
+  const [claveVigente, setClaveVigente] = useState(null)
   const [error, setError] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [mensajeGuardado, setMensajeGuardado] = useState(null)
@@ -28,6 +29,7 @@ export default function ExamenClave() {
     ])
       .then(([listaItems, clave]) => {
         setItems(listaItems)
+        setClaveVigente(clave)
         const iniciales = {}
         for (const it of listaItems) iniciales[it.id] = it.peso ?? 0
         for (const p of clave.pesos) iniciales[p.item_id] = p.peso
@@ -54,6 +56,7 @@ export default function ExamenClave() {
       const cuerpo = Object.entries(pesos).map(([itemId, peso]) => ({ item_id: itemId, peso: Number(peso) }))
       await llamar((token) => api.definirClave(token, id, cuerpo))
       setMensajeGuardado('Clave guardada')
+      cargar()
     } catch (err) {
       setError(err.mensaje || 'No se pudo guardar la clave')
     } finally {
@@ -136,7 +139,15 @@ export default function ExamenClave() {
                 ))}
               </tbody>
             </table>
-            <p className={suma === 1000 ? 'clave-suma-valida' : 'clave-suma-invalida'}>Suma de pesos: {suma} / 1000</p>
+            <p className={suma === 1000 ? 'clave-suma-valida' : 'clave-suma-invalida'}>
+              Suma de pesos a guardar: {suma} / 1000
+            </p>
+            {claveVigente && (
+              <p className="clave-suma-vigente">
+                Suma vigente (solo ítems publicados): {claveVigente.suma_pesos} / 1000
+                {claveVigente.valida ? ' — válida' : ' — inválida'}
+              </p>
+            )}
             {error && <p className="error">{error}</p>}
             {mensajeGuardado && <p>{mensajeGuardado}</p>}
             <button

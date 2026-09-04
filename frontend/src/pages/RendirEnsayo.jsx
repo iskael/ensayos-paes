@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api.js'
 import { useApi } from '../useApi.js'
@@ -14,6 +14,15 @@ export default function RendirEnsayo() {
   const [respuestas, setRespuestas] = useState({})
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const guardadosEnVuelo = useRef(new Map())
+
+  useEffect(() => {
+    const enVuelo = guardadosEnVuelo.current
+    return () => {
+      for (const control of enVuelo.values()) control.abort()
+      enVuelo.clear()
+    }
+  }, [])
 
   useEffect(() => {
     let cancelado = false
@@ -38,14 +47,28 @@ export default function RendirEnsayo() {
   const guardarRespuesta = useCallback(
     async (ensayoItemId, etiqueta) => {
       setRespuestas((actuales) => ({ ...actuales, [ensayoItemId]: etiqueta }))
+
+      guardadosEnVuelo.current.get(ensayoItemId)?.abort()
+      const control = new AbortController()
+      guardadosEnVuelo.current.set(ensayoItemId, control)
+
       try {
         await llamar((token) =>
-          api.guardarRespuestas(token, id, {
-            respuestas: [{ ensayo_item_id: ensayoItemId, respuesta_seleccionada: etiqueta }],
-          }),
+          api.guardarRespuestas(
+            token,
+            id,
+            { respuestas: [{ ensayo_item_id: ensayoItemId, respuesta_seleccionada: etiqueta }] },
+            control.signal,
+          ),
         )
-      } catch {
+        setError(null)
+      } catch (e) {
+        if (e instanceof ApiError && e.codigo === 'CANCELADO') return
         setError('No se pudo guardar la respuesta, revisá tu conexión')
+      } finally {
+        if (guardadosEnVuelo.current.get(ensayoItemId) === control) {
+          guardadosEnVuelo.current.delete(ensayoItemId)
+        }
       }
     },
     [id, llamar],

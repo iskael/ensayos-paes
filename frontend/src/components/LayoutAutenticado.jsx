@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext.jsx'
 import { MENU_POR_ROL, ETIQUETA_ROL } from '../constantes.js'
@@ -7,6 +7,39 @@ export default function LayoutAutenticado({ children }) {
   const [abierto, setAbierto] = useState(false)
   const { usuario, cerrarSesion } = useAuth()
   const navigate = useNavigate()
+  const drawerRef = useRef(null)
+  const hamburguesaRef = useRef(null)
+
+  useEffect(() => {
+    if (!abierto) return
+    const drawer = drawerRef.current
+    drawer?.querySelector('.drawer-cerrar')?.focus()
+
+    function alPresionarTecla(evento) {
+      if (evento.key === 'Escape') {
+        setAbierto(false)
+        return
+      }
+      if (evento.key !== 'Tab' || !drawer) return
+      const enfocables = drawer.querySelectorAll('a[href], button:not([disabled])')
+      if (enfocables.length === 0) return
+      const primero = enfocables[0]
+      const ultimo = enfocables[enfocables.length - 1]
+      if (evento.shiftKey && document.activeElement === primero) {
+        evento.preventDefault()
+        ultimo.focus()
+      } else if (!evento.shiftKey && document.activeElement === ultimo) {
+        evento.preventDefault()
+        primero.focus()
+      }
+    }
+
+    document.addEventListener('keydown', alPresionarTecla)
+    return () => {
+      document.removeEventListener('keydown', alPresionarTecla)
+      hamburguesaRef.current?.focus()
+    }
+  }, [abierto])
 
   function alCerrarSesion() {
     setAbierto(false)
@@ -21,9 +54,11 @@ export default function LayoutAutenticado({ children }) {
       <header className="barra-superior">
         <span className="barra-superior-titulo">Ensayos PAES</span>
         <button
+          ref={hamburguesaRef}
           className="boton-hamburguesa"
           type="button"
           aria-label="Abrir menú"
+          aria-expanded={abierto}
           onClick={() => setAbierto(true)}
         >
           ☰
@@ -32,7 +67,14 @@ export default function LayoutAutenticado({ children }) {
 
       {abierto && (
         <div className="drawer-overlay" onClick={() => setAbierto(false)}>
-          <nav className="drawer" onClick={(e) => e.stopPropagation()}>
+          <nav
+            ref={drawerRef}
+            className="drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú de usuario"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               className="drawer-cerrar"
               type="button"
