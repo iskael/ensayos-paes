@@ -44,8 +44,9 @@ paths:
       responses:
         '201':
           description: >
-            Usuario creado (sin sesión iniciada — debe verificar su email
-            antes de poder loguear)
+            Usuario creado, sin sesión iniciada. Si el servidor tiene SMTP
+            configurado, debe verificar su email antes de poder loguear;
+            si no, la cuenta queda activa (ver verificacion_pendiente).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/RegistroResponse' }
@@ -940,6 +941,12 @@ components:
       type: object
       properties:
         mensaje: { type: string }
+        verificacion_pendiente:
+          type: boolean
+          description: >
+            true si se envió un correo de verificación y la cuenta no puede
+            iniciar sesión hasta confirmarlo; false si el servidor no tiene
+            SMTP configurado y la cuenta quedó activa al registrarse.
     VerificarEmailRequest:
       type: object
       required: [token]

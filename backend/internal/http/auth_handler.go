@@ -45,6 +45,11 @@ type mensajeResp struct {
 	Mensaje string `json:"mensaje"`
 }
 
+type registroResp struct {
+	Mensaje               string `json:"mensaje"`
+	VerificacionPendiente bool   `json:"verificacion_pendiente"`
+}
+
 func (h *authHandler) registrar(w http.ResponseWriter, r *http.Request) {
 	var req registroReq
 	if !decodificar(w, r, &req) {
@@ -83,14 +88,27 @@ func (h *authHandler) registrar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !h.mailer.Configurado() {
+		if _, err := h.usuarios.MarcarVerificado(r.Context(), u.ID); err != nil {
+			escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo activar la cuenta")
+			return
+		}
+		escribirJSON(w, http.StatusCreated, registroResp{
+			Mensaje:               "Te registraste correctamente. Ya puedes iniciar sesión.",
+			VerificacionPendiente: false,
+		})
+		return
+	}
+
 	// Se despacha en segundo plano: un error de envío ya se loguea y nunca
 	// se propaga (ver enviarCorreoVerificacion), así que no hay razón para
 	// que la respuesta espere el round-trip SMTP. context.WithoutCancel
 	// evita que se cancele cuando termine esta request.
 	go h.enviarCorreoVerificacion(context.WithoutCancel(r.Context()), u)
 
-	escribirJSON(w, http.StatusCreated, mensajeResp{
-		Mensaje: "Te registraste correctamente. Revisá tu correo para verificar tu cuenta antes de iniciar sesión.",
+	escribirJSON(w, http.StatusCreated, registroResp{
+		Mensaje:               "Te registraste correctamente. Revisá tu correo para verificar tu cuenta antes de iniciar sesión.",
+		VerificacionPendiente: true,
 	})
 }
 

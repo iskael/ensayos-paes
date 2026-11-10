@@ -130,3 +130,7 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 - **Hasta esta fase no existía ninguna pregunta M2**: un estudiante que eligiera M2 no podía armar un ensayo (`STOCK_INSUFICIENTE`). Se agregaron 20 plantillas, 5 por eje, con los contenidos que el temario M2 2026 suma a los de M1. Probado de punta a punta: un ensayo M2 de 30 preguntas sale con 7 u 8 por eje.
 - **Suficiencia de datos queda fuera**: la PAES M2 incluye ese tipo de pregunta, con cinco alternativas fijas ("(1) por sí sola", …), y el modelo de datos admite exactamente cuatro (`etiqueta_alt` A–D). Incluirlas exige ampliar el enum, el contrato y la validación de alternativas.
 - **El ensayo M2 usa solo preguntas M2**: el temario dice que M2 evalúa también todo M1, pero `RN-01` filtra por `nivel` exacto. Si se quiere mezclar, hay que cambiar la regla de generación, no el generador.
+
+## Registro sin correo (MVP)
+- **Sin SMTP configurado, el registro activa la cuenta al tiro**: decisión del usuario para el MVP (2026-11-10), hasta que se configure el envío de correos. Antes, cada cuenta nueva quedaba bloqueada con `EMAIL_NO_VERIFICADO` y había que activarla a mano en la base. La condición es `mailer.Configurado()` (usuario y contraseña SMTP no vacíos), así que al configurar SMTP la verificación vuelve a exigirse sin tocar código.
+- **`POST /auth/register` responde `verificacion_pendiente`**, y la pantalla de registro muestra "Cuenta creada" o "Revisá tu correo" según ese campo. Si el campo no viene (backend viejo), el frontend asume que la verificación está pendiente.

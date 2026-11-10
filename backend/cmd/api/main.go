@@ -24,7 +24,7 @@ func main() {
 		log.Println("ADVERTENCIA: CORS_ALLOWED_ORIGIN='*' (cualquier origen). Configúrelo al dominio del frontend en producción.")
 	}
 	if cfg.SMTPUsuario == "" || cfg.SMTPPassword == "" {
-		log.Println("ADVERTENCIA: SMTP_USUARIO/SMTP_PASSWORD no configurados. El envío de correos de verificación fallará (se registrará en el log, no bloquea el registro).")
+		log.Println("ADVERTENCIA: SMTP_USUARIO/SMTP_PASSWORD no configurados. Las cuentas nuevas se activan al registrarse, sin verificar el email.")
 	}
 
 	ctx := context.Background()
