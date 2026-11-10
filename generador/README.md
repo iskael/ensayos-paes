@@ -1,9 +1,9 @@
 # Generador de ítems (v2, Modo A)
 
 Genera ítems PAES de matemáticas por **plantillas parametrizadas**: la respuesta correcta y los
-distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 94
-plantillas M1: 19 de números, 19 de álgebra y funciones, 34 de geometría y 22 de probabilidad y
-estadística; 38 de ellas llevan figura. Reemplaza al
+distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 114
+plantillas: 94 de M1 (19 de números, 19 de álgebra y funciones, 34 de geometría y 22 de
+probabilidad y estadística) y 20 de M2 (5 por eje); 42 de ellas llevan figura. Reemplaza al
 `prototipo-ia/` (4 plantillas) como fuente de ítems `generado`. Diseño: `docs/diseno_generacion_ia_v2.md`.
 
 ## Uso
@@ -106,6 +106,16 @@ desigualdades de meta y de suscripción, y simetría de la parábola (con figura
 entrada, promedio como expresión, crecimiento promedio, pago más frecuente desde un gráfico, monedas,
 puntaje de un juego, dado cargado, diagrama de cajón y cajas con bolitas. Las tablas van como figura
 (`figuras.tabla`), porque el enunciado es texto plano y no admite tablas.
+
+## Nivel M2
+
+`plantillas_m2.py` cubre los contenidos propios del temario de Competencia Matemática 2 (DEMRE,
+admisión 2026), con tipos tomados de las PAES M2 de 2024 a 2026: logaritmos, interés compuesto,
+orden de números con raíces, potencias de exponente fraccionario; sistemas sin solución o con
+infinitas soluciones, crecimiento y decaimiento exponencial, traslación de parábolas, funciones
+seno y coseno; razones trigonométricas, homotecia, ángulo inscrito y central, cuerdas que se cortan;
+combinatoria, permutaciones, probabilidad condicional, binomial y total. Quedan fuera las preguntas
+de suficiencia de datos, que usan cinco alternativas fijas y la app trabaja con cuatro.
 
 ## Convenciones
 
