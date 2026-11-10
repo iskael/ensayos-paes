@@ -20,7 +20,7 @@ export class ApiError extends Error {
   }
 }
 
-async function pedir(ruta, { metodo = 'GET', body, token } = {}) {
+async function pedir(ruta, { metodo = 'GET', body, token, signal } = {}) {
   const esFormData = typeof FormData !== 'undefined' && body instanceof FormData
   const headers = {}
   if (!esFormData) headers['Content-Type'] = 'application/json'
@@ -32,8 +32,10 @@ async function pedir(ruta, { metodo = 'GET', body, token } = {}) {
       method: metodo,
       headers,
       body: esFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
+      signal,
     })
-  } catch {
+  } catch (e) {
+    if (e?.name === 'AbortError') throw new ApiError(0, 'CANCELADO', 'Solicitud cancelada')
     throw new ApiError(0, 'ERROR_RED', 'No se pudo conectar con el servidor')
   }
 
@@ -53,8 +55,8 @@ export const api = {
   reenviarVerificacion: (email) => pedir('/api/v1/auth/reenviar-verificacion', { metodo: 'POST', body: { email } }),
   crearEnsayo: (token, body) => pedir('/api/v1/ensayos', { metodo: 'POST', body, token }),
   obtenerEnsayo: (token, id) => pedir(`/api/v1/ensayos/${id}`, { token }),
-  guardarRespuestas: (token, id, body) =>
-    pedir(`/api/v1/ensayos/${id}/respuestas`, { metodo: 'PATCH', body, token }),
+  guardarRespuestas: (token, id, body, signal) =>
+    pedir(`/api/v1/ensayos/${id}/respuestas`, { metodo: 'PATCH', body, token, signal }),
   enviarEnsayo: (token, id) => pedir(`/api/v1/ensayos/${id}/enviar`, { metodo: 'POST', token }),
   obtenerResultado: (token, id) => pedir(`/api/v1/ensayos/${id}/resultado`, { token }),
   dashboardResumen: (token) => pedir('/api/v1/dashboard/resumen', { token }),
