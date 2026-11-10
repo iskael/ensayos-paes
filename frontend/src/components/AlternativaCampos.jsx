@@ -1,3 +1,5 @@
+import { urlImagen } from '../api.js'
+
 export default function AlternativaCampos({ alternativa, onCambiarTexto, onCambiarImagen, onMarcarCorrecta, subiendo }) {
   return (
     <div className="alternativa-campos">
@@ -25,7 +27,7 @@ export default function AlternativaCampos({ alternativa, onCambiarTexto, onCambi
       />
       {subiendo && <p>Subiendo imagen…</p>}
       {alternativa.imagen_url && (
-        <img src={alternativa.imagen_url} alt="" style={{ maxWidth: '100%', marginTop: 8 }} />
+        <img src={urlImagen(alternativa.imagen_url)} alt="" style={{ maxWidth: '100%', marginTop: 8 }} />
       )}
     </div>
   )

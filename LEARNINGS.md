@@ -85,3 +85,8 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 - **`cmd/seed-admin`**: como el registro público solo permite estudiante/profesor a propósito, se agregó un comando CLI que crea el admin directamente vía los mismos repos (reutiliza `Usuarios.Crear`, incluyendo su aceptación de T&C).
 - **`scripts/smoke_test.sh`**: script bash (curl + jq) que recorre el flujo completo end-to-end (registro con/sin T&C, examen, ítems, clave, publicación, ensayo, respuestas, resultado, dashboard, grupos). Se validó la lógica de separación body/status y las transformaciones `jq` con datos simulados en este entorno (sin Postgres real disponible), pero no se pudo ejecutar contra un servidor real — es el primer script a correr al levantar el backend.
 - Ver `GUIA_PRUEBA_LOCAL.md` en la raíz del repo para el paso a paso completo.
+
+## Figuras y explicación en el frontend
+- **`imagen_url` puede ser una ruta relativa a la API** (`/uploads/archivo.png`): `urlImagen()` en `api.js` le antepone la misma base que usa el resto de las llamadas. Una URL absoluta con la IP dejaba de servir al cambiar la IP del CT o al entrar por Tailscale. Las URL absolutas (las que devuelve `POST /imagenes`) siguen funcionando.
+- **`RendirEnsayo` y `Resultado` no mostraban `imagen_url`** aunque la API la enviaba desde la Fase 3; ahora la muestran en el enunciado y en las alternativas. La revisión del resultado no la incluía: se agregó `imagen_url` a `RevisionItem` (contrato y handler).
+- **`Resultado` ahora muestra `explicacion`**, que la API ya enviaba y el frontend ignoraba.

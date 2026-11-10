@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api, ApiError } from '../api.js'
+import { api, ApiError, urlImagen } from '../api.js'
 import { useApi } from '../useApi.js'
 import { NIVELES, EJES, DIFICULTADES } from '../constantes.js'
 import Formula from '../components/Formula.jsx'
@@ -191,7 +191,7 @@ export default function ItemForm() {
               onChange={(e) => e.target.files[0] && subirImagenItem(e.target.files[0])}
             />
             {subiendoImagen === 'item' && <p>Subiendo imagen…</p>}
-            {form.imagen_url && <img src={form.imagen_url} alt="" style={{ maxWidth: '100%', marginTop: 8 }} />}
+            {form.imagen_url && <img src={urlImagen(form.imagen_url)} alt="" style={{ maxWidth: '100%', marginTop: 8 }} />}
           </div>
           <div className="campo">
             <label htmlFor="eje">Eje</label>

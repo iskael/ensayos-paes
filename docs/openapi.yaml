@@ -1003,7 +1003,7 @@ components:
       properties:
         etiqueta: { $ref: '#/components/schemas/EtiquetaAlternativa' }
         texto: { type: string, description: 'soporta LaTeX' }
-        imagen_url: { type: string, format: uri, nullable: true }
+        imagen_url: { type: string, nullable: true, description: 'URL absoluta o ruta relativa a la API (p. ej. /uploads/archivo.png)' }
         es_correcta: { type: boolean }
     Alternativa:
       allOf:
@@ -1017,7 +1017,7 @@ components:
       properties:
         examen_fuente_id: { type: string, format: uuid, nullable: true }
         enunciado: { type: string, description: 'soporta LaTeX' }
-        imagen_url: { type: string, format: uri, nullable: true }
+        imagen_url: { type: string, nullable: true, description: 'URL absoluta o ruta relativa a la API (p. ej. /uploads/archivo.png)' }
         eje: { $ref: '#/components/schemas/Eje' }
         nivel: { $ref: '#/components/schemas/Nivel' }
         dificultad: { $ref: '#/components/schemas/Dificultad' }
@@ -1034,7 +1034,7 @@ components:
         id: { type: string, format: uuid }
         examen_fuente_id: { type: string, format: uuid, nullable: true }
         enunciado: { type: string }
-        imagen_url: { type: string, format: uri, nullable: true }
+        imagen_url: { type: string, nullable: true, description: 'URL absoluta o ruta relativa a la API (p. ej. /uploads/archivo.png)' }
         eje: { $ref: '#/components/schemas/Eje' }
         nivel: { $ref: '#/components/schemas/Nivel' }
         dificultad: { $ref: '#/components/schemas/Dificultad' }
@@ -1066,7 +1066,7 @@ components:
         ensayo_item_id: { type: string, format: uuid }
         orden: { type: integer }
         enunciado: { type: string }
-        imagen_url: { type: string, format: uri, nullable: true }
+        imagen_url: { type: string, nullable: true, description: 'URL absoluta o ruta relativa a la API (p. ej. /uploads/archivo.png)' }
         eje: { $ref: '#/components/schemas/Eje' }
         alternativas:
           type: array
@@ -1075,7 +1075,7 @@ components:
             properties:
               etiqueta: { $ref: '#/components/schemas/EtiquetaAlternativa' }
               texto: { type: string }
-              imagen_url: { type: string, format: uri, nullable: true }
+              imagen_url: { type: string, nullable: true, description: 'URL absoluta o ruta relativa a la API (p. ej. /uploads/archivo.png)' }
         respuesta_seleccionada:
           allOf: [{ $ref: '#/components/schemas/EtiquetaAlternativa' }]
           nullable: true
@@ -1134,6 +1134,7 @@ components:
       properties:
         orden: { type: integer }
         enunciado: { type: string }
+        imagen_url: { type: string, nullable: true, description: 'URL absoluta o ruta relativa a la API (p. ej. /uploads/archivo.png)' }
         eje: { $ref: '#/components/schemas/Eje' }
         respuesta_seleccionada:
           allOf: [{ $ref: '#/components/schemas/EtiquetaAlternativa' }]

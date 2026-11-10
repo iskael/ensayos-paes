@@ -299,6 +299,7 @@ type ensayoResumenResp struct {
 type revisionItemResp struct {
 	Orden                 int                         `json:"orden"`
 	Enunciado             string                      `json:"enunciado"`
+	ImagenURL             *string                     `json:"imagen_url,omitempty"`
 	Eje                   domain.Eje                  `json:"eje"`
 	RespuestaSeleccionada *domain.EtiquetaAlternativa `json:"respuesta_seleccionada,omitempty"`
 	RespuestaCorrecta     domain.EtiquetaAlternativa  `json:"respuesta_correcta"`
@@ -343,7 +344,7 @@ func resultadoResp(d repo.EnsayoDetalle) resultadoRespT {
 		}
 		items = append(items, domain.ItemResultado{Eje: it.Eje, EsCorrecta: correcta, PesoSnapshot: it.PesoSnapshot})
 		revision = append(revision, revisionItemResp{
-			Orden: it.Orden, Enunciado: it.Enunciado, Eje: it.Eje,
+			Orden: it.Orden, Enunciado: it.Enunciado, ImagenURL: it.ImagenURL, Eje: it.Eje,
 			RespuestaSeleccionada: it.RespuestaSeleccionada, RespuestaCorrecta: respuestaCorrecta,
 			EsCorrecta: correcta, Peso: it.PesoSnapshot, Explicacion: it.Explicacion, Alternativas: it.Alternativas,
 		})
