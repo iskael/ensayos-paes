@@ -5,8 +5,11 @@ Stack completo (Postgres + migraciones + API + frontend) vía `docker-compose.ym
 ## Instancia actual
 
 - **Proxmox host**: `192.168.0.155` (nodo `pve`).
-- **CT**: VMID `118`, hostname `ensayos-paes`, IP `192.168.0.190/24`.
-- **App**: frontend en `http://192.168.0.190/`, API en `http://192.168.0.190:8080`.
+- **CT**: VMID `118`, hostname `ensayos-paes`, IP por DHCP desde 2026-11-09 (`192.168.0.237` a esa fecha; antes fija `192.168.0.190`).
+- **App**: frontend en `http://<ip-del-ct>/`, API en `http://<ip-del-ct>:8080`.
+- Si la IP cambia hay que actualizar `CORS_ALLOWED_ORIGIN` y `UPLOADS_URL` en `.env` y recrear `api`
+  (`docker compose up -d api`): el navegador llama a la API en otro puerto, así que el origen del
+  frontend tiene que estar en la lista de CORS.
 - Código desplegado copiando el working tree (el repo de GitHub es privado;
   no se pudo `git clone` sin credenciales dentro del CT). Para actualizar,
   repetir la transferencia o configurar un deploy key/PAT y clonar en
@@ -49,7 +52,8 @@ docker compose exec api ./seed-admin -email=admin@tudominio.cl -password=UnaClav
 
 ## 5. Puertos
 
-- `80` — frontend (nginx, estático).
+- `80` — frontend (nginx, estático). `frontend/nginx.conf` devuelve `index.html` para las rutas de
+  la SPA (`/login`, `/dashboard`, …), de modo que entrar directo o recargar no da 404.
 - `8080` — API (`/api/v1/*`, `/uploads/*`, `/health`).
 - `5432` — Postgres (expuesto para debugging; considerar cerrarlo en el
   firewall del CT si no se necesita acceso externo).
