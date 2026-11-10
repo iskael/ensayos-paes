@@ -433,3 +433,62 @@ def grafico_de_barras(categorias, valores, titulo_x, titulo_y="Frecuencia"):
     l.texto((0, alto + 0.9), titulo_y, dx=4, dy=-8, ancla="start", tam=12)
     l.texto((n * paso / 2 + 0.2, 0), titulo_x, dy=36, tam=12)
     return l.svg()
+
+
+def tabla(encabezados, filas):
+    columnas = len(encabezados)
+    anchos = [max(len(str(encabezados[c])), *(len(str(f[c])) for f in filas)) * 0.62 + 1.6 for c in range(columnas)]
+    total, alto_fila = sum(anchos), 1.7
+    l = Lienzo(0, total, 0, alto_fila * (len(filas) + 1), ancho=min(360, round(total * 19) + 24), margen=12)
+    arriba = alto_fila * (len(filas) + 1)
+    l.poligono([(0, arriba - alto_fila), (total, arriba - alto_fila), (total, arriba), (0, arriba)], relleno=GRIS, grosor=1.2)
+    l.poligono([(0, 0), (total, 0), (total, arriba), (0, arriba)], grosor=1.4)
+    x = 0
+    for c in range(columnas):
+        if c:
+            l.linea((x, 0), (x, arriba), grosor=1)
+        centro = x + anchos[c] / 2
+        l.texto((centro, arriba - alto_fila / 2), encabezados[c], dy=5, tam=12, negrita=True)
+        for i, fila in enumerate(filas):
+            l.texto((centro, arriba - alto_fila * (i + 1.5)), fila[c], dy=5, tam=13)
+        x += anchos[c]
+    for i in range(1, len(filas)):
+        l.linea((0, arriba - alto_fila * (i + 1)), (total, arriba - alto_fila * (i + 1)), grosor=0.8)
+    return l.svg()
+
+
+def diagrama_de_cajon(minimo, q1, mediana, q3, maximo, titulo):
+    amplitud = maximo - minimo
+    l = Lienzo(minimo - amplitud * 0.08, maximo + amplitud * 0.08, -amplitud * 0.34, amplitud * 0.3, ancho=360, margen=18)
+    alto = amplitud * 0.09
+    centro = amplitud * 0.1
+    l.linea((minimo, centro), (q1, centro))
+    l.linea((q3, centro), (maximo, centro))
+    l.linea((minimo, centro - alto * 0.6), (minimo, centro + alto * 0.6))
+    l.linea((maximo, centro - alto * 0.6), (maximo, centro + alto * 0.6))
+    l.poligono([(q1, centro - alto), (q3, centro - alto), (q3, centro + alto), (q1, centro + alto)], relleno=GRIS)
+    l.linea((mediana, centro - alto), (mediana, centro + alto), grosor=2.2)
+    base = -amplitud * 0.12
+    l.linea((minimo - amplitud * 0.05, base), (maximo + amplitud * 0.05, base), grosor=1.2)
+    for valor in (minimo, q1, mediana, q3, maximo):
+        l.linea((valor, base - amplitud * 0.012), (valor, base + amplitud * 0.012), grosor=1.2)
+        l.linea((valor, base), (valor, centro - alto), punteada=True, grosor=0.7)
+        l.texto((valor, base), _num(valor), dy=18, tam=12)
+    l.texto(((minimo + maximo) / 2, base), titulo, dy=38, tam=12)
+    return l.svg()
+
+
+def cajas_con_bolitas(cajas):
+    """cajas: lista de cuatro pares (grises, blancas)."""
+    l = Lienzo(0, 21, 0, 15, ancho=360, margen=10)
+    posiciones = [(0.5, 8), (11, 8), (0.5, 0.6), (11, 0.6)]
+    for i, ((grises, blancas), (x, y)) in enumerate(zip(cajas, posiciones), 1):
+        l.poligono([(x, y), (x + 9.5, y), (x + 9.5, y + 5), (x, y + 5)], grosor=1.6)
+        l.texto((x + 4.75, y + 5), f"Caja {i}", dy=-6, tam=12, negrita=True)
+        total = grises + blancas
+        mezcla = ["gris" if (k + 1) * grises // total > k * grises // total else "blanca" for k in range(total)]
+        for k, color in enumerate(mezcla):
+            cx = x + 1.2 + (k % 5) * 1.8
+            cy = y + 3.6 - (k // 5) * 2.1
+            l.circulo((cx, cy), 0.72, relleno="#8c8c8c" if color == "gris" else "#ffffff", grosor=1.4)
+    return l.svg()
