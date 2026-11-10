@@ -24,6 +24,12 @@ func New(cfg Config) *Mailer {
 	return &Mailer{cfg: cfg}
 }
 
+// Configurado indica si hay credenciales SMTP. Sin ellas no se pueden enviar
+// correos de verificación y el registro activa la cuenta de inmediato.
+func (m *Mailer) Configurado() bool {
+	return m.cfg.Usuario != "" && m.cfg.Password != ""
+}
+
 // construirMensajeVerificacion arma el asunto y el cuerpo del correo, sin
 // tocar la red — separado de EnviarVerificacion para poder testearlo sin
 // credenciales SMTP reales.

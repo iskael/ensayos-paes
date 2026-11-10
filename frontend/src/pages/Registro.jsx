@@ -10,26 +10,42 @@ export default function Registro() {
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
-  const [registrado, setRegistrado] = useState(false)
+  const [registrado, setRegistrado] = useState(null)
 
   async function alEnviar(evento) {
     evento.preventDefault()
     setError(null)
     setEnviando(true)
     try {
-      await api.registrar({
+      const respuesta = await api.registrar({
         nombre,
         email,
         password,
         rol,
         acepta_terminos: aceptaTerminos,
       })
-      setRegistrado(true)
+      setRegistrado({ pendiente: respuesta?.verificacion_pendiente !== false })
     } catch (e) {
       setError(e instanceof ApiError ? e.mensaje || 'No se pudo registrar' : 'No se pudo conectar con el servidor')
     } finally {
       setEnviando(false)
     }
+  }
+
+  if (registrado && !registrado.pendiente) {
+    return (
+      <div className="pantalla">
+        <div className="tarjeta">
+          <h1>Cuenta creada</h1>
+          <p>
+            Te registraste correctamente con <strong>{email}</strong>. Ya puedes iniciar sesión.
+          </p>
+          <p>
+            <Link to="/login">Ir a iniciar sesión</Link>
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (registrado) {
