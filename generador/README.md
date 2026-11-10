@@ -1,7 +1,9 @@
 # Generador de ítems (v2, Modo A)
 
 Genera ítems PAES de matemáticas por **plantillas parametrizadas**: la respuesta correcta y los
-distractores se calculan por código, y cada distractor corresponde a un error típico. Reemplaza al
+distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 41
+plantillas M1: 7 de números, 7 de álgebra y funciones, 20 de geometría y 7 de probabilidad y
+estadística. Reemplaza al
 `prototipo-ia/` (4 plantillas) como fuente de ítems `generado`. Diseño: `docs/diseno_generacion_ia_v2.md`.
 
 ## Uso
@@ -51,6 +53,22 @@ Una función decorada con `@plantilla(eje, nivel)` que recibe un `random.Random`
 `Propuesta` (o lanza `Descartar`). Formato de texto: fórmulas entre `$...$` (KaTeX), coma decimal
 (`tex`), fracciones irreducibles (`frac`), montos con `pesos`. No usar `$` como signo de dinero ni
 saltos de línea en el enunciado.
+
+## Geometría modelada en PAES oficiales
+
+`plantillas_geometria_paes.py` reúne 13 plantillas cuyos **tipos de pregunta** se tomaron de las PAES
+M1 Regular e Invierno de admisión 2024 publicadas por el DEMRE: diagonal de un cuadrado, razón entre
+áreas de círculos, altura de un cilindro dada su capacidad, área de superficie en términos de `x`,
+suma de vectores con incógnita, composición de rotación y traslación, paso erróneo en una secuencia
+de transformaciones isométricas, vector de traslación de un recorrido, aplicación de una fórmula
+dada, área de un cuadrado con esquinas cubiertas, volumen al escalar las aristas, medida real desde
+un plano a escala y distancia entre un punto y su reflejo. Se replica la habilidad evaluada con
+contextos y números propios; no se copia ningún ítem. Quedan fuera los tipos que dependen de una
+figura (gráficos de vectores, cuerpos compuestos, simetría de figuras), que requieren generar
+imágenes y que el frontend las muestre.
+
+Una plantilla con alternativas de orden natural ("En el Paso 1" … "En el Paso 4") usa
+`orden_fijo=True` y no se baraja.
 
 ## Convenciones
 

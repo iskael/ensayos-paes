@@ -143,6 +143,7 @@ class Propuesta:
     pasos: str
     comprobar: Callable[[object], bool]
     dificultad: str
+    orden_fijo: bool = False
 
 
 @dataclass
@@ -193,14 +194,18 @@ def validar(p: Propuesta) -> list[str]:
 
 def armar_item(pl: Plantilla, p: Propuesta, rng: random.Random) -> dict:
     opciones = [p.correcta] + p.distractores
-    rng.shuffle(opciones)
+    if p.orden_fijo:
+        opciones.sort(key=lambda o: o.valor)
+    else:
+        rng.shuffle(opciones)
     alternativas = []
     errores = []
     for etiqueta, o in zip(ETIQUETAS, opciones):
         alternativas.append({"etiqueta": etiqueta, "texto": o.texto, "es_correcta": o is p.correcta})
         if o is not p.correcta:
             errores.append(f"{etiqueta}) {o.error}")
-    explicacion = f"{p.pasos} Errores frecuentes: {'; '.join(errores)}."
+    titulo = "Las demás alternativas" if p.orden_fijo else "Errores frecuentes"
+    explicacion = f"{p.pasos} {titulo}: {'; '.join(errores)}."
     return {
         "plantilla": pl.nombre,
         "eje": pl.eje,
