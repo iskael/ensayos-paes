@@ -119,6 +119,31 @@ body {
   cursor: pointer;
 }
 
+.figura-item {
+  display: block;
+  max-width: min(100%, 360px);
+  height: auto;
+  margin: 12px auto;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.figura-alternativa {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-top: 8px;
+  background: #fff;
+}
+
+.explicacion {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--color-primario);
+  background: #f5f7fb;
+  font-size: 14px;
+}
+
 .alternativa.seleccionada {
   border-color: var(--color-primario);
   background: #eaf1ff;

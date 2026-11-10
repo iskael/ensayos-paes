@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api.js'
+import { api, ApiError, urlImagen } from '../api.js'
 import { useApi } from '../useApi.js'
 import Formula from '../components/Formula.jsx'
 
@@ -115,6 +115,7 @@ export default function RendirEnsayo() {
           Pregunta {indice + 1} de {preguntas.length}
         </p>
         <Formula texto={pregunta.enunciado} />
+        {pregunta.imagen_url && <img className="figura-item" src={urlImagen(pregunta.imagen_url)} alt="Figura de la pregunta" />}
         <div style={{ marginTop: 16 }}>
           {pregunta.alternativas.map((alt) => (
             <button
@@ -126,6 +127,7 @@ export default function RendirEnsayo() {
               onClick={() => guardarRespuesta(pregunta.ensayo_item_id, alt.etiqueta)}
             >
               {alt.etiqueta}) <Formula texto={alt.texto} />
+              {alt.imagen_url && <img className="figura-alternativa" src={urlImagen(alt.imagen_url)} alt="" />}
             </button>
           ))}
         </div>
