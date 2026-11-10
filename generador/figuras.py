@@ -167,7 +167,8 @@ def trapecio_rectangulo(base_menor, base_mayor, rotulo_menor, rotulo_mayor, rotu
     return l.svg()
 
 
-def plano_cartesiano(puntos=None, segmentos=(), vectores=(), recta=None, poligonos=(), cuadricula=True, proyecciones=True, rango=None):
+def plano_cartesiano(puntos=None, segmentos=(), vectores=(), recta=None, poligonos=(), cuadricula=True, proyecciones=True, rango=None,
+                     curva=None, eje_vertical=None):
     """puntos: {rótulo: (x, y)}; vectores: [(inicio, fin, rótulo)]; poligonos: [(vértices, rótulo)]."""
     puntos = puntos or {}
     todos = list(puntos.values()) + [p for v in vectores for p in v[:2]] + [p for pol, _ in poligonos for p in pol] + [(0, 0)]
@@ -207,6 +208,13 @@ def plano_cartesiano(puntos=None, segmentos=(), vectores=(), recta=None, poligon
             candidatos += [(ymin - y1) / (y2 - y1), (ymax - y1) / (y2 - y1)]
         dentro = sorted(t for t in candidatos if xmin - 1e-9 <= recortar(t)[0] <= xmax + 1e-9 and ymin - 1e-9 <= recortar(t)[1] <= ymax + 1e-9)
         l.linea(recortar(dentro[0]), recortar(dentro[-1]), grosor=1.6)
+    if eje_vertical is not None:
+        l.linea((eje_vertical, ymin), (eje_vertical, ymax), punteada=True, grosor=1.3)
+        marcas_x.add(eje_vertical)
+    if curva:
+        visibles = [p for p in curva if ymin <= p[1] <= ymax]
+        for a, b in zip(visibles, visibles[1:]):
+            l.linea(a, b, grosor=2)
     for a, b in segmentos:
         l.linea(a, b, grosor=2)
     for inicio, fin, rotulo in vectores:

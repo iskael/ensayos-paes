@@ -119,3 +119,7 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 - **`imagen_url` puede ser una ruta relativa a la API** (`/uploads/archivo.png`): `urlImagen()` en `api.js` le antepone la misma base que usa el resto de las llamadas. Una URL absoluta con la IP dejaba de servir al cambiar la IP del CT o al entrar por Tailscale. Las URL absolutas (las que devuelve `POST /imagenes`) siguen funcionando.
 - **`RendirEnsayo` y `Resultado` no mostraban `imagen_url`** aunque la API la enviaba desde la Fase 3; ahora la muestran en el enunciado y en las alternativas. La revisión del resultado no la incluía: se agregó `imagen_url` a `RevisionItem` (contrato y handler).
 - **`Resultado` ahora muestra `explicacion`**, que la API ya enviaba y el frontend ignoraba.
+
+## Generador — números y álgebra (24 plantillas más, 81 en total)
+- **Números y álgebra tenían 8 tipos de pregunta cada uno contra 34 de geometría**; se agregaron 12 por eje tomados de las PAES M1 2024–2026. Rasgo de las pruebas recientes que faltaba: la respuesta es una **expresión** y no un número (`25.000 · 0,8 · 0,75`, `P − 9M − 12L`, `f(t) = 720 − 3t`), y los problemas de "mínimo para superar" donde la respuesta es el entero siguiente al de la igualdad.
+- **`main` quedó igual a producción**: la rama local `fix/fast-follows-ux` se mergeó (PR #12) después de integrarle `main`; se comparó archivo por archivo contra `/opt/app` y no hubo diferencias.
