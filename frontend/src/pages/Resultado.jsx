@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { api } from '../api.js'
+import { api, urlImagen } from '../api.js'
 import { useApi } from '../useApi.js'
 import { etiquetaEje } from '../constantes.js'
 import Formula from '../components/Formula.jsx'
@@ -73,6 +73,7 @@ export default function Resultado() {
             <p>
               {item.orden}. <Formula texto={item.enunciado} />
             </p>
+            {item.imagen_url && <img className="figura-item" src={urlImagen(item.imagen_url)} alt="Figura de la pregunta" />}
             <p>
               Tu respuesta:{' '}
               {item.respuesta_seleccionada ? (
@@ -91,6 +92,11 @@ export default function Resultado() {
                 {item.es_correcta ? 'Correcta' : 'Incorrecta'}
               </strong>
             </p>
+            {item.explicacion && (
+              <p className="explicacion">
+                <Formula texto={item.explicacion} />
+              </p>
+            )}
           </div>
         ))}
       </div>

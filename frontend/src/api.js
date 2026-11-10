@@ -5,6 +5,11 @@
 const BASE_URL =
   import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8080`
 
+export function urlImagen(url) {
+  if (!url) return null
+  return url.startsWith('/') ? `${BASE_URL}${url}` : url
+}
+
 export class ApiError extends Error {
   constructor(status, codigo, mensaje, extra) {
     super(mensaje || 'Error de red')

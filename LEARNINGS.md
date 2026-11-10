@@ -107,3 +107,8 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 ## Despliegue — rutas de la SPA y cambio de IP
 - **El nginx del frontend no tenía fallback a `index.html`**: la imagen usaba la configuración por defecto, así que abrir o recargar cualquier ruta del router (`/login`, `/dashboard`) devolvía 404; solo funcionaba entrar por `/` y navegar. Se agregó `frontend/nginx.conf` con `try_files $uri $uri/ /index.html`. `/assets/` queda fuera del fallback a propósito: un archivo con hash que no existe debe dar 404, no el HTML.
 - **Cambiar la IP del CT rompe el login aunque la página cargue**: el frontend deriva la URL de la API del host (`:8080`), pero el backend solo acepta los orígenes de `CORS_ALLOWED_ORIGIN`. Al pasar el CT a DHCP (2026-11-09) hubo que agregar el origen nuevo en `.env`. Si se quiere que deje de depender de la IP, la salida es que nginx haga proxy de `/api` y `/uploads` y el frontend use el mismo origen.
+
+## Figuras y explicación en el frontend
+- **`imagen_url` puede ser una ruta relativa a la API** (`/uploads/archivo.png`): `urlImagen()` en `api.js` le antepone la misma base que usa el resto de las llamadas. Una URL absoluta con la IP dejaba de servir al cambiar la IP del CT o al entrar por Tailscale. Las URL absolutas (las que devuelve `POST /imagenes`) siguen funcionando.
+- **`RendirEnsayo` y `Resultado` no mostraban `imagen_url`** aunque la API la enviaba desde la Fase 3; ahora la muestran en el enunciado y en las alternativas. La revisión del resultado no la incluía: se agregó `imagen_url` a `RevisionItem` (contrato y handler).
+- **`Resultado` ahora muestra `explicacion`**, que la API ya enviaba y el frontend ignoraba.
