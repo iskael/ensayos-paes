@@ -492,3 +492,76 @@ def cajas_con_bolitas(cajas):
             cy = y + 3.6 - (k // 5) * 2.1
             l.circulo((cx, cy), 0.72, relleno="#8c8c8c" if color == "gris" else "#ffffff", grosor=1.4)
     return l.svg()
+
+
+def _en_circulo(angulo_grados, radio=5.0, centro=(0.0, 0.0)):
+    a = math.radians(angulo_grados)
+    return (centro[0] + radio * math.cos(a), centro[1] + radio * math.sin(a))
+
+
+def cuerdas_que_se_cortan(angulos, rotulos_segmentos):
+    """angulos: posiciones (en grados) de A, B, C, D; las cuerdas AB y CD se cortan en E."""
+    l = Lienzo(-6.8, 6.8, -6.4, 6.6, ancho=300, margen=14)
+    l.circulo((0, 0), 5)
+    a, b, c, d = (_en_circulo(t) for t in angulos)
+    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = a, b, c, d
+    den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+    e = (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+    l.linea(a, b)
+    l.linea(c, d)
+    for nombre, p in zip("ABCD", (a, b, c, d)):
+        l.punto(p, 2.8)
+        dx, dy = p[0] / 5 * 14, -p[1] / 5 * 14
+        l.texto(p, nombre, dx=dx, dy=dy + 5, cursiva=True)
+    l.punto(e, 2.8)
+    l.texto(e, "E", dx=10, dy=-6, cursiva=True)
+    for (inicio, fin), rotulo in zip([(a, e), (e, b), (c, e), (e, d)], rotulos_segmentos):
+        if rotulo:
+            mx, my = (inicio[0] + fin[0]) / 2, (inicio[1] + fin[1]) / 2
+            vx, vy = fin[0] - inicio[0], fin[1] - inicio[1]
+            n = math.hypot(vx, vy) or 1
+            l.texto((mx, my), rotulo, dx=-vy / n * 14, dy=-vx / n * 14 + 4, tam=12)
+    return l.svg()
+
+
+def angulo_inscrito_y_central(angulo_a, angulo_b, angulo_c, rotulo_central, rotulo_inscrito):
+    """A y B son extremos del arco; C es el vértice del ángulo inscrito; O es el centro."""
+    l = Lienzo(-6.8, 6.8, -6.6, 6.6, ancho=300, margen=14)
+    l.circulo((0, 0), 5)
+    a, b, c = (_en_circulo(t) for t in (angulo_a, angulo_b, angulo_c))
+    o = (0.0, 0.0)
+    l.linea(o, a, grosor=1.5)
+    l.linea(o, b, grosor=1.5)
+    l.linea(c, a)
+    l.linea(c, b)
+    for nombre, p in (("A", a), ("B", b), ("C", c)):
+        l.punto(p, 2.8)
+        l.texto(p, nombre, dx=p[0] / 5 * 14, dy=-p[1] / 5 * 14 + 5, cursiva=True)
+    l.punto(o, 2.8)
+    l.texto(o, "O", dx=-6, dy=-8, cursiva=True, ancla="end")
+    medio = math.radians((angulo_a + angulo_b) / 2)
+    l.texto((1.6 * math.cos(medio), 1.6 * math.sin(medio)), rotulo_central, dy=5, tam=13)
+    hacia = ((a[0] + b[0]) / 2 - c[0], (a[1] + b[1]) / 2 - c[1])
+    n = math.hypot(*hacia) or 1
+    l.texto((c[0] + hacia[0] / n * 1.7, c[1] + hacia[1] / n * 1.7), rotulo_inscrito, dy=5, tam=13)
+    return l.svg()
+
+
+def triangulo_con_angulo(base, altura, rotulo_base, rotulo_altura, rotulo_hipotenusa, rotulo_angulo):
+    """Triángulo rectángulo con el ángulo agudo marcado en el vértice de la base (opuesto a la altura)."""
+    b, h = _proporcion(base, altura, minimo=0.3)
+    b, h = b * 10, h * 10
+    l = Lienzo(-2.6, b + 1.4, -1.6, h + 0.8)
+    l.poligono([(0, 0), (b, 0), (b, h)], relleno=GRIS_CLARO)
+    l.angulo_recto((b, 0), (0, 0), (b, h))
+    radio = min(b, h) * 0.32 + 0.8
+    fin = math.atan2(h, b)
+    l.elementos.append(f'<path d="M {l.p((radio, 0))[0]} {l.p((radio, 0))[1]} A {round(radio * l.k, 2)} {round(radio * l.k, 2)} 0 0 0 '
+                       f'{l.p((radio * math.cos(fin), radio * math.sin(fin)))[0]} {l.p((radio * math.cos(fin), radio * math.sin(fin)))[1]}" '
+                       f'fill="none" stroke="{NEGRO}" stroke-width="1.3"/>')
+    l.texto((radio * 1.25 * math.cos(fin / 2), radio * 1.25 * math.sin(fin / 2)), rotulo_angulo, dx=4, dy=5, ancla="start", tam=12)
+    l.texto((b / 2, 0), rotulo_base, dy=20)
+    l.texto((b, h / 2), rotulo_altura, dx=8, dy=5, ancla="start")
+    l.texto((b / 2, h / 2), rotulo_hipotenusa, dx=-10, dy=-6, ancla="end")
+    return l.svg()

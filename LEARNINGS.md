@@ -125,3 +125,8 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 - **`main` quedó igual a producción**: la rama local `fix/fast-follows-ux` se mergeó (PR #12) después de integrarle `main`; se comparó archivo por archivo contra `/opt/app` y no hubo diferencias.
 - **Probabilidad y estadística (13 plantillas más, 94 en total)**: en las PAES recientes casi todos los ítems de este eje leen una tabla, un gráfico o un diagrama de cajón. Como el enunciado es texto plano, **las tablas se dibujan como figura** (`figuras.tabla`); también se agregaron `diagrama_de_cajon` y `cajas_con_bolitas`.
 - **Distractores elegidos entre candidatos**: cuando un error típico coincide con la respuesta o con otro distractor para ciertos números, la plantilla toma los tres primeros candidatos distintos (`_tres_distintos`) en vez de descartar la combinación completa.
+
+## Nivel M2 (20 plantillas)
+- **Hasta esta fase no existía ninguna pregunta M2**: un estudiante que eligiera M2 no podía armar un ensayo (`STOCK_INSUFICIENTE`). Se agregaron 20 plantillas, 5 por eje, con los contenidos que el temario M2 2026 suma a los de M1. Probado de punta a punta: un ensayo M2 de 30 preguntas sale con 7 u 8 por eje.
+- **Suficiencia de datos queda fuera**: la PAES M2 incluye ese tipo de pregunta, con cinco alternativas fijas ("(1) por sí sola", …), y el modelo de datos admite exactamente cuatro (`etiqueta_alt` A–D). Incluirlas exige ampliar el enum, el contrato y la validación de alternativas.
+- **El ensayo M2 usa solo preguntas M2**: el temario dice que M2 evalúa también todo M1, pero `RN-01` filtra por `nivel` exacto. Si se quiere mezclar, hay que cambiar la regla de generación, no el generador.
