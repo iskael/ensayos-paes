@@ -47,7 +47,8 @@ cd backend && go run ./cmd/api        # API (health en :8080/health)
 cd backend && go test ./...           # tests
 cd backend && go run ./cmd/seed-admin -email=... -password=...   # crear usuario admin (no hay registro público de admin)
 cd backend && ./scripts/smoke_test.sh <admin_email> <admin_password>  # smoke test e2e (requiere API corriendo, curl y jq)
-cd prototipo-ia && python3 genera_preguntas.py
+cd generador && python3 generar.py                  # genera ítems por plantillas (salida/ con JSON, SQL de carga y muestra HTML)
+cd generador && python3 -m unittest test_generador   # pruebas del generador
 ```
 
 Para la puesta en marcha local paso a paso, ver `GUIA_PRUEBA_LOCAL.md`.
