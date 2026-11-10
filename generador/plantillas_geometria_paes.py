@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 from fractions import Fraction
 
+import figuras
 from nucleo import Descartar, Propuesta, frac, op, plantilla, raiz_tex, tex
 
 EJE = "geometria"
@@ -56,7 +57,8 @@ def diagonal_de_un_cuadrado(rng):
         largo(lado ** 4, "calcula el área del cuadrado en vez de su diagonal"),
     ]
     return Propuesta(contexto, largo(2 * lado * lado, texto=f"{lado}\\sqrt{{2}}"), distractores, pasos,
-                     lambda v: abs(math.sqrt(v) - math.hypot(lado, lado)) < 1e-9, "media")
+                     lambda v: abs(math.sqrt(v) - math.hypot(lado, lado)) < 1e-9, "media",
+                     figura=figuras.cuadrado_con_diagonal(f"{lado} {unidad}"))
 
 
 @plantilla(EJE)
@@ -119,7 +121,8 @@ def altura_de_cilindro_dada_la_capacidad(rng):
         cm(volumen / (6 * r), "usa $2\\pi r$ (el perímetro de la base) en vez del área de la base"),
         cm(volumen / (r * r), "no considera $\\pi$ al despejar la altura"),
     ]
-    return Propuesta(enunciado, cm(h), distractores, pasos, lambda v: 3 * r * r * v == volumen, "media")
+    return Propuesta(enunciado, cm(h), distractores, pasos, lambda v: 3 * r * r * v == volumen, "media",
+                     figura=figuras.cilindro(f"{r} cm", "h", float(h) / r))
 
 
 @plantilla(EJE)
@@ -150,7 +153,8 @@ def area_de_superficie_en_terminos_de_x(rng):
         alt(a * a * b, "multiplica las tres medidas, como si calculara el volumen"),
     ]
     return Propuesta(enunciado, alt(correcto), distractores, pasos,
-                     lambda v: v == sum([a * b] * 4) + a * a, "alta")
+                     lambda v: v == sum([a * b] * 4) + a * a, "alta",
+                     figura=figuras.caja(f"{a}x", f"{a}x", f"{b}x", alto=b / a, sin_tapa=not edificio))
 
 
 @plantilla(EJE)
@@ -307,7 +311,7 @@ def vector_de_traslacion_en_un_recorrido(rng):
     for n, h, k, v in tramos:
         posicion += n * complex(*sentidos[h]) + k * complex(*sentidos[v])
     return Propuesta(enunciado, _alt_punto((x, y)), distractores, pasos,
-                     lambda p: _complejo(p) == posicion, "media")
+                     lambda p: _complejo(p) == posicion, "media", figura=figuras.rosa_de_los_vientos())
 
 
 def _con_pi_cm(coef, error=None):
@@ -360,7 +364,8 @@ def area_de_cuadrado_con_esquinas_cubiertas(rng):
         cm2(p * p + 2 * m_ * n_, "suma el área de los triángulos en vez de restarla"),
     ]
     return Propuesta(enunciado, cm2(visible), distractores, pasos,
-                     lambda v: v == p * p - 4 * Fraction(m_ * n_, 2), "media")
+                     lambda v: v == p * p - 4 * Fraction(m_ * n_, 2), "media",
+                     figura=figuras.cuadrado_con_esquinas(p, m_, n_, f"{p} cm", f"{m_} cm", f"{n_} cm"))
 
 
 @plantilla(EJE)
@@ -431,4 +436,5 @@ def distancia_entre_un_punto_y_su_reflejo(rng):
         op(2 * c, "refleja el punto con respecto al origen en vez de hacerlo con respecto al eje"),
     ]
     return Propuesta(enunciado, op(2 * propia), distractores, pasos,
-                     lambda v: v == abs(_complejo(p) - _complejo(reflejo)), "media")
+                     lambda v: v == abs(_complejo(p) - _complejo(reflejo)), "media",
+                     figura=figuras.plano_cartesiano(puntos={"A": p, "B": reflejo}))

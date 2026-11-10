@@ -64,8 +64,8 @@ class TestLote(unittest.TestCase):
         self.assertEqual(json.dumps(self.items), json.dumps(otra))
 
     def test_estructura_del_item(self):
-        enunciados = Counter(i["enunciado"] for i in self.items)
-        self.assertEqual(max(enunciados.values()), 1)
+        claves = Counter((i["enunciado"], i["imagen_url"]) for i in self.items)
+        self.assertEqual(max(claves.values()), 1)
         for it in self.items:
             self.assertEqual([a["etiqueta"] for a in it["alternativas"]], ETIQUETAS)
             self.assertEqual(sum(a["es_correcta"] for a in it["alternativas"]), 1)
@@ -74,6 +74,18 @@ class TestLote(unittest.TestCase):
             self.assertEqual((it["origen"], it["estado"]), ("generado", "borrador"))
             self.assertRegex(it["explicacion"], "Errores frecuentes:|Las demás alternativas:")
             self.assertNotIn("\n", it["enunciado"])
+            for texto in [it["enunciado"], it["explicacion"]]:
+                fuera_de_formulas = "".join(texto.split("$")[0::2])
+                self.assertNotIn("{", fuera_de_formulas, texto)
+
+    def test_figuras(self):
+        con_figura = [it for it in self.items if it["imagen_url"]]
+        self.assertGreater(len(con_figura), 100)
+        for it in self.items:
+            self.assertEqual(bool(it["imagen_url"]), bool(it["figura_svg"]))
+            if it["imagen_url"]:
+                self.assertRegex(it["imagen_url"], r"^/uploads/gen-[0-9a-f]{16}\.png$")
+                self.assertTrue(it["figura_svg"].startswith("<svg "))
 
     def test_ningun_eje_ni_plantilla_domina(self):
         por_eje = Counter(i["eje"] for i in self.items)

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import math
+import xml.etree.ElementTree as ET
 import random
 from dataclasses import dataclass
 from fractions import Fraction
@@ -144,6 +146,7 @@ class Propuesta:
     comprobar: Callable[[object], bool]
     dificultad: str
     orden_fijo: bool = False
+    figura: str | None = None
 
 
 @dataclass
@@ -186,6 +189,11 @@ def validar(p: Propuesta) -> list[str]:
             fallas.append(f"un distractor también es correcto: {d.texto}")
         if not d.error:
             fallas.append(f"distractor sin error típico asociado: {d.texto}")
+    if p.figura is not None:
+        try:
+            ET.fromstring(p.figura)
+        except ET.ParseError:
+            fallas.append("la figura no es SVG válido")
     for t in [p.enunciado, p.pasos] + [o.texto for o in opciones]:
         if not _latex_valido(t):
             fallas.append(f"delimitadores de fórmula mal formados: {t}")
@@ -206,12 +214,17 @@ def armar_item(pl: Plantilla, p: Propuesta, rng: random.Random) -> dict:
             errores.append(f"{etiqueta}) {o.error}")
     titulo = "Las demás alternativas" if p.orden_fijo else "Errores frecuentes"
     explicacion = f"{p.pasos} {titulo}: {'; '.join(errores)}."
+    imagen_url = None
+    if p.figura is not None:
+        imagen_url = f"/uploads/gen-{hashlib.sha1(p.figura.encode()).hexdigest()[:16]}.png"
     return {
         "plantilla": pl.nombre,
         "eje": pl.eje,
         "nivel": pl.nivel,
         "dificultad": p.dificultad,
         "enunciado": p.enunciado,
+        "imagen_url": imagen_url,
+        "figura_svg": p.figura,
         "alternativas": alternativas,
         "explicacion": explicacion,
         "peso": PESO_DEFECTO,

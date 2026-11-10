@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 
+import figuras
 from nucleo import Descartar, Propuesta, miles, op, opf, par, pesos, plantilla, polinomio, simplificada, tex
 
 EJE = "algebra_funciones"
@@ -125,7 +126,8 @@ def pendiente_entre_dos_puntos(rng):
         opf(Fraction(y1 + y2, x1 + x2), "suma las coordenadas en vez de restarlas"),
     ]
     return Propuesta(enunciado, opf(pendiente), distractores, pasos,
-                     lambda v: v * (x2 - x1) == y2 - y1, "media")
+                     lambda v: v * (x2 - x1) == y2 - y1, "media",
+                     figura=figuras.plano_cartesiano(puntos={"A": (x1, y1), "B": (x2, y2)}, recta=((x1, y1), (x2, y2))))
 
 
 def _conjunto(valores) -> str:

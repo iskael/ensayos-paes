@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 
+import figuras
 from nucleo import Descartar, Propuesta, miles, op, par, plantilla, raiz_tex, tex
 
 EJE = "geometria"
@@ -29,6 +30,8 @@ def teorema_de_pitagoras(rng):
         ])
         pasos = (f"Se forma un triángulo rectángulo de catetos {a} y {b}. Por el teorema de Pitágoras, "
                  f"la hipotenusa es $\\sqrt{{{a}^{{2}} + {b}^{{2}}}} = \\sqrt{{{a * a + b * b}}} = {c}$ m.")
+        figura = (figuras.triangulo_rectangulo(a, b, f"{a} m", f"{b} m", "?", muro=True) if "escalera" in enunciado
+                  else figuras.rectangulo(a, b, f"{a} m", f"{b} m", diagonal="?"))
         correcto = c * c
         distractores = [
             op((a + b) ** 2, "suma las longitudes de los catetos", _largo((a + b) ** 2, unidad)),
@@ -43,6 +46,7 @@ def teorema_de_pitagoras(rng):
                      f"¿Cuánto mide el otro cateto?")
         pasos = (f"Por el teorema de Pitágoras, el cateto buscado es "
                  f"$\\sqrt{{{c}^{{2}} - {a}^{{2}}}} = \\sqrt{{{c * c - a * a}}} = {b}$ cm.")
+        figura = figuras.triangulo_rectangulo(a, b, f"{a} cm", "?", f"{c} cm")
         correcto = b * b
         distractores = [
             op(c * c + a * a, "suma los cuadrados como si buscara la hipotenusa", _largo(c * c + a * a, unidad)),
@@ -51,7 +55,7 @@ def teorema_de_pitagoras(rng):
         ]
         comprobar = lambda v: v + a * a == c * c
         dificultad = "media"
-    return Propuesta(enunciado, op(correcto, texto=_largo(correcto, unidad)), distractores, pasos, comprobar, dificultad)
+    return Propuesta(enunciado, op(correcto, texto=_largo(correcto, unidad)), distractores, pasos, comprobar, dificultad, figura=figura)
 
 
 def _con_pi(coef, unidad: str) -> str:
@@ -78,7 +82,9 @@ def area_del_circulo(rng):
         op(r, "no eleva el radio al cuadrado", _con_pi(r, u2)),
     ]
     return Propuesta(enunciado, op(r * r, texto=_con_pi(r * r, u2)), distractores, pasos,
-                     lambda v: v * 4 == d * d, "media" if da_diametro else "baja")
+                     lambda v: v * 4 == d * d, "media" if da_diametro else "baja",
+                     figura=figuras.circulo_con_medida(f"{d} {unidad}", "diametro") if da_diametro
+                     else figuras.circulo_con_medida(f"{r} {unidad}", "radio"))
 
 
 @plantilla(EJE)
@@ -98,6 +104,7 @@ def volumen_de_cilindro_o_cono(rng):
         ]
         factor = 1
         dificultad = "media"
+        figura = figuras.cilindro(f"{r} cm", f"{h} cm", h / r)
     else:
         enunciado = (f"Un cono recto tiene un radio basal de {r} cm y una altura de {h} cm. ¿Cuál es su volumen?")
         correcto = Fraction(r * r * h, 3)
@@ -110,8 +117,9 @@ def volumen_de_cilindro_o_cono(rng):
         ]
         factor = 3
         dificultad = "alta"
+        figura = figuras.cono(f"{r} cm", f"{h} cm", h / r)
     return Propuesta(enunciado, op(correcto, texto=_con_pi(correcto, u3)), distractores, pasos,
-                     lambda v: v * factor == r * r * h, dificultad)
+                     lambda v: v * factor == r * r * h, dificultad, figura=figura)
 
 
 @plantilla(EJE)
@@ -161,7 +169,8 @@ def semejanza_con_sombras(rng):
         op(alto * sombra2, "multiplica la altura del poste por la sombra y no divide", mt(alto * sombra2)),
     ]
     return Propuesta(enunciado, op(correcto, texto=mt(correcto)), distractores, pasos,
-                     lambda v: v * sombra == alto * sombra2, "media")
+                     lambda v: v * sombra == alto * sombra2, "media",
+                     figura=figuras.sombras(f"{alto} m", f"{sombra} m", f"{sombra2} m", el_objeto.split(" ", 1)[1]))
 
 
 @plantilla(EJE)
@@ -186,7 +195,8 @@ def punto_medio_de_un_segmento(rng):
         alt(((x1 + y1) // 2, (x2 + y2) // 2), "promedia las coordenadas de cada punto en vez de promediar las $x$ y las $y$ por separado"),
     ]
     return Propuesta(enunciado, alt(medio), distractores, pasos,
-                     lambda v: (2 * v[0] - x1, 2 * v[1] - y1) == (x2, y2), "baja")
+                     lambda v: (2 * v[0] - x1, 2 * v[1] - y1) == (x2, y2), "baja",
+                     figura=figuras.plano_cartesiano(puntos={"A": (x1, y1), "B": (x2, y2)}, segmentos=[((x1, y1), (x2, y2))]))
 
 
 @plantilla(EJE)
@@ -214,4 +224,5 @@ def area_de_rectangulo_desde_perimetro(rng):
         a = Fraction(perimetro, 2 * (k + 1))
         return v == a * (k * a)
 
-    return Propuesta(enunciado, op(ancho * largo, texto=cm2(ancho * largo)), distractores, pasos, comprobar, "alta")
+    return Propuesta(enunciado, op(ancho * largo, texto=cm2(ancho * largo)), distractores, pasos, comprobar, "alta",
+                     figura=figuras.rectangulo(largo, ancho, "largo", "ancho"))
