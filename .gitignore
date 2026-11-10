@@ -19,6 +19,9 @@ venv/
 /prototipo-ia/preguntas_generadas*.json
 /prototipo-ia/reporte_calidad*.txt
 
+# Generador de ítems (salidas)
+/generador/salida/
+
 # Entorno / secretos
 .env
 .env.local
