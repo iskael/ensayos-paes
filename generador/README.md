@@ -1,9 +1,9 @@
 # Generador de ítems (v2, Modo A)
 
 Genera ítems PAES de matemáticas por **plantillas parametrizadas**: la respuesta correcta y los
-distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 57
-plantillas M1: 7 de números, 7 de álgebra y funciones, 34 de geometría y 9 de probabilidad y
-estadística; 28 de ellas llevan figura. Reemplaza al
+distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 81
+plantillas M1: 19 de números, 19 de álgebra y funciones, 34 de geometría y 9 de probabilidad y
+estadística; 29 de ellas llevan figura. Reemplaza al
 `prototipo-ia/` (4 plantillas) como fuente de ítems `generado`. Diseño: `docs/diseno_generacion_ia_v2.md`.
 
 ## Uso
@@ -89,6 +89,15 @@ plantilla ya generaba. Dos ítems pueden compartir enunciado si su figura es dis
 
 `plantillas_figuras.py` reúne 16 plantillas modeladas en tipos de pregunta de las PAES M1 de admisión
 2023 a 2026: 9 de geometría con figura, 5 de tipos recientes sin figura y 2 de gráficos de barras.
+
+## Números y álgebra modelados en PAES oficiales
+
+`plantillas_numeros_paes.py` y `plantillas_algebra_paes.py` agregan 12 plantillas por eje, con tipos
+tomados de las PAES M1 de admisión 2024 a 2026: compras con precios por unidad de medida, porcentaje
+de un porcentaje, descuentos sucesivos como expresión, fracción de lo que faltaba, razones,
+conversiones, paso erróneo en operaciones combinadas; reducción con paréntesis, factor que falta,
+expresiones de dinero y de perímetro, funciones que modelan un estanque o un costo rebajado,
+desigualdades de meta y de suscripción, y simetría de la parábola (con figura).
 
 ## Convenciones
 
