@@ -37,29 +37,21 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="pantalla">
-        <div className="tarjeta">
-          <p className="error">{error}</p>
-        </div>
+      <div className="contenido">
+        <p className="error">{error}</p>
       </div>
     )
   }
 
-  if (!resumen || !evolucion) {
-    return (
-      <div className="pantalla">
-        <div className="tarjeta">Cargando…</div>
-      </div>
-    )
-  }
+  if (!resumen || !evolucion) return <p className="cargando">Cargando…</p>
 
   if (resumen.total_ensayos === 0) {
     return (
-      <div className="pantalla">
-        <div className="tarjeta">
-          <h1>Mi progreso</h1>
+      <div className="contenido">
+        <h1>Mi progreso</h1>
+        <div className="panel vacio">
           <p>Todavía no rendiste ningún ensayo.</p>
-          <Link to="/" className="boton" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+          <Link to="/" className="boton">
             Rendir mi primer ensayo
           </Link>
         </div>
@@ -77,8 +69,8 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="pantalla">
-      <div className="tarjeta">
+    <div className="contenido">
+      <div>
         <h1>Mi progreso</h1>
 
         <div className="dashboard-tarjetas">
@@ -90,28 +82,36 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <h2>Desempeño por eje</h2>
-        <ul>
+        <div className="panel">
+          <h2 style={{ marginTop: 0 }}>Por tema</h2>
           {resumen.desempeno_por_eje.map((d) => (
-            <li key={d.eje}>
-              {etiquetaEje(d.eje)}: {d.correctas}/{d.total}
-            </li>
+            <div className="barra-eje" key={d.eje}>
+              <div className="barra-eje-fila">
+                <span>{etiquetaEje(d.eje)}</span>
+                <span className="texto-suave">
+                  {d.total ? Math.round((d.correctas / d.total) * 100) : 0} % · {d.correctas}/{d.total}
+                </span>
+              </div>
+              <div className="barra-eje-fondo">
+                <div style={{ width: `${d.total ? (d.correctas / d.total) * 100 : 0}%` }} />
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
 
         {datosGrafico.length > 0 && (
-          <>
-            <h2>Evolución del puntaje</h2>
+          <div className="panel">
+            <h2 style={{ marginTop: 0 }}>Evolución del puntaje</h2>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={datosGrafico}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-borde)" />
                 <XAxis dataKey="fecha" />
                 <YAxis domain={[0, 1000]} />
                 <Tooltip />
-                <Line type="monotone" dataKey="puntaje" stroke="#2f6fed" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="puntaje" stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
-          </>
+          </div>
         )}
       </div>
     </div>

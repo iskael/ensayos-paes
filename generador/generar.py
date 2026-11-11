@@ -23,7 +23,9 @@ import plantillas_numeros_figuras  # noqa: F401
 import plantillas_modelo_2023  # noqa: F401
 import plantillas_suficiencia  # noqa: F401
 import plantillas_probabilidad  # noqa: F401
-from nucleo import REGISTRO, Descartar, armar_item, validar
+import plantillas_ciencias  # noqa: F401
+import contenido  # noqa: F401
+from nucleo import FIJOS, REGISTRO, Descartar, Plantilla, armar_item, propuesta_fija, validar
 
 SEMILLA = 2026
 OBJETIVO_POR_PLANTILLA = 12
@@ -43,6 +45,15 @@ NOMBRE_EJE = {
     "algebra_funciones": "Álgebra y funciones",
     "geometria": "Geometría",
     "probabilidad_estadistica": "Probabilidad y estadística",
+    "localizar": "Lectora · Localizar",
+    "interpretar": "Lectora · Interpretar",
+    "evaluar": "Lectora · Evaluar",
+    "biologia": "Ciencias · Biología",
+    "fisica": "Ciencias · Física",
+    "quimica": "Ciencias · Química",
+    "historia": "Historia · Mundo, América y Chile",
+    "formacion_ciudadana": "Historia · Formación ciudadana",
+    "sistema_economico": "Historia · Sistema económico",
 }
 
 
@@ -70,6 +81,15 @@ def generar(semilla: int = SEMILLA, objetivo: int = OBJETIVO_POR_PLANTILLA):
                 continue
             vistos.add((propuesta.enunciado, propuesta.figura))
             items.append(armar_item(pl, propuesta, rng))
+    for it in FIJOS:
+        nombre = f"fijo_{it.nivel.lower()}_{it.eje}"
+        propuesta = propuesta_fija(it)
+        problemas = validar(propuesta)
+        if problemas:
+            fallas.append((nombre, it.enunciado, problemas))
+            continue
+        rng = random.Random(f"{semilla}:{it.enunciado}:{it.estimulo.clave if it.estimulo else ''}")
+        items.append(armar_item(Plantilla(nombre, it.eje, it.nivel, None), propuesta, rng, it.estimulo, it.orden))
     return items, fallas, descartes
 
 
@@ -79,21 +99,33 @@ def _sql(texto: str) -> str:
 
 def a_sql(items: list[dict]) -> str:
     lineas = ["BEGIN;"]
+    estimulos = {}
+    for it in items:
+        if it["estimulo"]:
+            estimulos[it["estimulo"]["clave"]] = it["estimulo"]
+    for e in estimulos.values():
+        titulo = _sql(e["titulo"]) if e["titulo"] else "NULL"
+        fuente = _sql(e["fuente"]) if e["fuente"] else "NULL"
+        lineas.append(f"INSERT INTO estimulos (clave, titulo, texto, fuente) VALUES ({_sql(e['clave'])}, {titulo}, {_sql(e['texto'])}, {fuente}) "
+                      "ON CONFLICT (clave) DO UPDATE SET titulo = EXCLUDED.titulo, texto = EXCLUDED.texto, fuente = EXCLUDED.fuente;")
     for it in items:
         alternativas = ", ".join(
             f"({_sql(a['etiqueta'])}, {_sql(a['texto'])}, {'TRUE' if a['es_correcta'] else 'FALSE'})"
             for a in it["alternativas"])
         imagen = _sql(it["imagen_url"]) if it["imagen_url"] else "NULL"
+        estimulo = f"(SELECT id FROM estimulos WHERE clave = {_sql(it['estimulo']['clave'])})" if it["estimulo"] else "NULL"
+        orden = str(it["orden_estimulo"]) if it["orden_estimulo"] is not None else "NULL"
         if it["imagen_url"]:
             lineas.append(f"UPDATE items SET imagen_url = {imagen} WHERE origen = 'generado' "
                           f"AND enunciado = {_sql(it['enunciado'])} AND imagen_url IS NULL;")
         lineas.append(
-            "WITH nuevo AS (INSERT INTO items (enunciado, imagen_url, eje, nivel, dificultad, origen, estado, peso, explicacion) "
+            "WITH nuevo AS (INSERT INTO items (enunciado, imagen_url, eje, nivel, dificultad, origen, estado, peso, explicacion, "
+            "estimulo_id, orden_estimulo) "
             f"SELECT {_sql(it['enunciado'])}, {imagen}, "
             f"{_sql(it['eje'])}, {_sql(it['nivel'])}, {_sql(it['dificultad'])}, "
-            f"'generado', 'borrador', {it['peso']}, {_sql(it['explicacion'])} "
+            f"'generado', 'borrador', {it['peso']}, {_sql(it['explicacion'])}, {estimulo}, {orden} "
             f"WHERE NOT EXISTS (SELECT 1 FROM items WHERE enunciado = {_sql(it['enunciado'])} "
-            f"AND imagen_url IS NOT DISTINCT FROM {imagen}) RETURNING id) "
+            f"AND imagen_url IS NOT DISTINCT FROM {imagen} AND estimulo_id IS NOT DISTINCT FROM {estimulo}) RETURNING id) "
             "INSERT INTO alternativas (item_id, etiqueta, texto, es_correcta) "
             f"SELECT nuevo.id, v.e::etiqueta_alt, v.t, v.c FROM nuevo, (VALUES {alternativas}) AS v(e, t, c);")
     lineas.append("COMMIT;")

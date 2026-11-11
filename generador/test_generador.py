@@ -7,7 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 import generar
-from nucleo import DIFICULTADES, EJES, ETIQUETAS, REGISTRO, Descartar, armar_item, validar
+from nucleo import DIFICULTADES, EJES, EJES_POR_NIVEL, ETIQUETAS, REGISTRO, Descartar, armar_item, validar
 
 KATEX = Path(__file__).parent.parent / "frontend" / "node_modules" / "katex"
 SORTEOS = 400
@@ -48,9 +48,22 @@ class TestPlantillas(unittest.TestCase):
         nombres = [pl.nombre for pl in REGISTRO]
         self.assertEqual(len(nombres), len(set(nombres)))
         for pl in REGISTRO:
-            self.assertIn(pl.eje, EJES)
+            self.assertIn(pl.eje, EJES_POR_NIVEL[pl.nivel])
         for eje in EJES:
             self.assertGreaterEqual(sum(1 for pl in REGISTRO if pl.eje == eje), 5)
+
+    def test_items_fijos(self):
+        from nucleo import FIJOS, propuesta_fija
+        claves = Counter((f.enunciado, f.estimulo.clave if f.estimulo else None) for f in FIJOS)
+        self.assertEqual([k for k, n in claves.items() if n > 1], [])
+        for f in FIJOS:
+            self.assertEqual(validar(propuesta_fija(f)), [], f.enunciado)
+        por_estimulo = {}
+        for f in FIJOS:
+            if f.estimulo:
+                por_estimulo.setdefault(f.estimulo.clave, []).append(f.orden)
+        for clave, ordenes in por_estimulo.items():
+            self.assertEqual(sorted(ordenes), list(range(1, len(ordenes) + 1)), clave)
 
 
 class TestLote(unittest.TestCase):
@@ -64,7 +77,7 @@ class TestLote(unittest.TestCase):
         self.assertEqual(json.dumps(self.items), json.dumps(otra))
 
     def test_estructura_del_item(self):
-        claves = Counter((i["enunciado"], i["imagen_url"]) for i in self.items)
+        claves = Counter((i["enunciado"], i["imagen_url"], (i["estimulo"] or {}).get("clave")) for i in self.items)
         self.assertEqual(max(claves.values()), 1)
         for it in self.items:
             n = len(it["alternativas"])
@@ -91,9 +104,10 @@ class TestLote(unittest.TestCase):
 
     def test_ningun_eje_ni_plantilla_domina(self):
         por_eje = Counter(i["eje"] for i in self.items)
-        self.assertGreaterEqual(min(por_eje.values()), 60)
+        self.assertGreaterEqual(min(por_eje[e] for e in EJES), 60)
+        self.assertGreaterEqual(min(n for e, n in por_eje.items() if e not in EJES), 10)
         por_plantilla = Counter(i["plantilla"] for i in self.items)
-        self.assertLessEqual(max(por_plantilla.values()), generar.OBJETIVO_POR_PLANTILLA)
+        self.assertLessEqual(max(n for p, n in por_plantilla.items() if not p.startswith("fijo_")), generar.OBJETIVO_POR_PLANTILLA)
 
     def test_sql_tiene_un_insert_por_item(self):
         sql = generar.a_sql(self.items)

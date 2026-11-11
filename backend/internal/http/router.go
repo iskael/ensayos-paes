@@ -67,6 +67,7 @@ func New(d Deps) http.Handler {
 
 			priv.Post("/auth/logout", authH.logout)
 			priv.Get("/me", authH.me)
+			priv.Get("/pruebas", ensayoH.pruebas)
 
 			priv.Group(func(admin chi.Router) {
 				admin.Use(RequerirRol(domain.RolAdmin))
@@ -109,6 +110,7 @@ func New(d Deps) http.Handler {
 					en.Route("/{ensayoId}", func(er chi.Router) {
 						er.Get("/", ensayoH.obtener)
 						er.Patch("/respuestas", ensayoH.guardarRespuestas)
+						er.Post("/items/{ensayoItemId}/revelar", ensayoH.revelar)
 						er.Post("/enviar", ensayoH.enviar)
 						er.Get("/resultado", ensayoH.resultado)
 					})

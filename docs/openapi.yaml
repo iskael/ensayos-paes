@@ -245,6 +245,37 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
+  /pruebas:
+    get:
+      tags: [Ensayos]
+      operationId: listarPruebas
+      summary: Catálogo de pruebas PAES con sus ejes y las preguntas publicadas por eje
+      responses:
+        '200':
+          description: Pruebas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Prueba' }
+
+  /ensayos/{ensayoId}/items/{ensayoItemId}/revelar:
+    parameters:
+      - { $ref: '#/components/parameters/EnsayoId' }
+      - { name: ensayoItemId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Ensayos]
+      operationId: revelarPregunta
+      summary: Revisar una pregunta en modo práctica (fija su respuesta)
+      responses:
+        '200':
+          description: Clave y explicación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Correccion' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: 'Ensayo finalizado o que no está en modo práctica' }
+
   /ensayos/{ensayoId}/enviar:
     parameters:
       - { $ref: '#/components/parameters/EnsayoId' }
@@ -869,10 +900,13 @@ components:
       enum: [estudiante, profesor, admin]
     Nivel:
       type: string
-      enum: [M1, M2]
+      description: 'La prueba PAES: CL (Competencia Lectora), M1, M2, CIENCIAS, HCS (Historia y Ciencias Sociales)'
+      enum: [M1, M2, CL, CIENCIAS, HCS]
     Eje:
       type: string
-      enum: [numeros, algebra_funciones, geometria, probabilidad_estadistica]
+      description: 'Cada prueba tiene sus ejes (ver GET /pruebas); los de matemática son de M1 y M2'
+      enum: [numeros, algebra_funciones, geometria, probabilidad_estadistica, localizar, interpretar, evaluar,
+             biologia, fisica, quimica, historia, formacion_ciudadana, sistema_economico]
     Dificultad:
       type: string
       enum: [baja, media, alta]
@@ -891,14 +925,46 @@ components:
       description: 'E solo existe en ítems de 5 alternativas (suficiencia de datos de la PAES M2)' 
     ModoEnsayo:
       type: string
-      enum: [libre]
-      description: 'cronometrado se incorpora en v2'
+      enum: [libre, practica, simulacro]
+      description: >
+        libre: sin tiempo, corrección al final. practica: se puede revisar cada pregunta al responderla
+        (POST .../revelar), lo que fija su respuesta. simulacro: tiempo prorrateado del oficial (limite_minutos).
     EstadoEnsayo:
       type: string
       enum: [en_progreso, finalizado]
     CantidadEnsayo:
       type: integer
-      enum: [10, 20, 30]
+      enum: [5, 10, 15, 20, 30, 40, 55, 65, 80]
+      description: 'En pruebas con estímulos (CL) se arma con textos completos hasta sumar exactamente la cantidad'
+    Estimulo:
+      description: Texto, fuente o figura que comparten varias preguntas seguidas (p. ej. un texto de Competencia Lectora).
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        titulo: { type: string, nullable: true }
+        texto: { type: string, description: 'párrafos separados por línea en blanco; soporta LaTeX' }
+        imagen_url: { type: string, nullable: true }
+        fuente: { type: string, nullable: true }
+    Correccion:
+      type: object
+      properties:
+        respuesta_correcta: { $ref: '#/components/schemas/EtiquetaAlternativa' }
+        es_correcta: { type: boolean }
+        explicacion: { type: string, nullable: true }
+    Prueba:
+      type: object
+      properties:
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        nombre: { type: string }
+        ejes:
+          type: array
+          items: { $ref: '#/components/schemas/Eje' }
+        preguntas_oficiales: { type: integer }
+        minutos_oficiales: { type: integer }
+        usa_estimulos: { type: boolean }
+        publicadas_por_eje:
+          type: object
+          additionalProperties: { type: integer }
 
     # ---- Auth ----
     RegistroRequest:
@@ -1088,6 +1154,13 @@ components:
         respuesta_seleccionada:
           allOf: [{ $ref: '#/components/schemas/EtiquetaAlternativa' }]
           nullable: true
+        estimulo:
+          allOf: [{ $ref: '#/components/schemas/Estimulo' }]
+          nullable: true
+        correccion:
+          description: Solo en modo práctica, cuando la pregunta ya se revisó.
+          allOf: [{ $ref: '#/components/schemas/Correccion' }]
+          nullable: true
     Ensayo:
       type: object
       properties:
@@ -1101,6 +1174,7 @@ components:
         estado: { $ref: '#/components/schemas/EstadoEnsayo' }
         fecha_inicio: { type: string, format: date-time }
         fecha_fin: { type: string, format: date-time, nullable: true }
+        limite_minutos: { type: integer, nullable: true, description: 'solo en simulacro' }
         preguntas:
           type: array
           items: { $ref: '#/components/schemas/PreguntaEnsayo' }

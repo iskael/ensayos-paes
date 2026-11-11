@@ -8,7 +8,7 @@ const VACIO = {
   nombre: '',
   anio_admision: new Date().getFullYear(),
   tipo: TIPOS_EXAMEN[0].valor,
-  nivel: NIVELES[0],
+  nivel: 'M1',
   edicion: '',
   url_pdf: '',
   fecha_publicacion: '',

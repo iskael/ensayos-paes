@@ -4,7 +4,13 @@ import "time"
 
 type ModoEnsayo string
 
-const ModoLibre ModoEnsayo = "libre" // 'cronometrado' se incorpora en v2
+const (
+	ModoLibre     ModoEnsayo = "libre"
+	ModoPractica  ModoEnsayo = "practica"
+	ModoSimulacro ModoEnsayo = "simulacro"
+)
+
+func (m ModoEnsayo) Valido() bool { return m == ModoLibre || m == ModoPractica || m == ModoSimulacro }
 
 type EstadoEnsayo string
 
@@ -13,17 +19,17 @@ const (
 	EnsayoFinalizado EstadoEnsayo = "finalizado"
 )
 
-var CantidadesEnsayoValidas = map[int]bool{10: true, 20: true, 30: true}
+var CantidadesEnsayoValidas = map[int]bool{5: true, 10: true, 15: true, 20: true, 30: true, 40: true, 55: true, 65: true, 80: true}
 
 func CantidadEnsayoValida(c int) bool { return CantidadesEnsayoValidas[c] }
 
-func EjesValidos(ejes []Eje) bool {
+func EjesValidos(nivel Nivel, ejes []Eje) bool {
 	if len(ejes) == 0 {
 		return false
 	}
 	vistos := map[Eje]bool{}
 	for _, e := range ejes {
-		if !e.Valido() || vistos[e] {
+		if !EjePerteneceA(e, nivel) || vistos[e] {
 			return false
 		}
 		vistos[e] = true
@@ -39,6 +45,7 @@ type Ensayo struct {
 	Cantidad        int
 	Modo            ModoEnsayo
 	Estado          EstadoEnsayo
+	LimiteMinutos   *int
 	FechaInicio     time.Time
 	FechaFin        *time.Time
 	Puntaje         *int
@@ -119,7 +126,9 @@ type DesgloseEje struct {
 }
 
 // ordenEjes fija un orden determinístico para el desglose.
-var ordenEjes = []Eje{EjeNumeros, EjeAlgebraFunciones, EjeGeometria, EjeProbabilidadEstadistica}
+var ordenEjes = []Eje{EjeNumeros, EjeAlgebraFunciones, EjeGeometria, EjeProbabilidadEstadistica,
+	EjeLocalizar, EjeInterpretar, EjeEvaluar, EjeBiologia, EjeFisica, EjeQuimica,
+	EjeHistoria, EjeFormacionCiudadana, EjeSistemaEconomico}
 
 func CalcularDesglosePorEje(items []ItemResultado) []DesgloseEje {
 	acc := map[Eje]*DesgloseEje{}
@@ -143,4 +152,26 @@ func CalcularDesglosePorEje(items []ItemResultado) []DesgloseEje {
 		}
 	}
 	return out
+}
+
+// ElegirGruposExactos elige, recorriendo los grupos en el orden dado (ya barajado), un subconjunto cuyos tamaños sumen
+// exactamente `objetivo`. Devuelve los índices elegidos en el orden en que se recorrieron, o nil si no hay solución.
+func ElegirGruposExactos(objetivo int, tamanos []int) []int {
+	alcanzable := make([][]int, objetivo+1)
+	alcanzable[0] = []int{}
+	for i, t := range tamanos {
+		if t <= 0 {
+			continue
+		}
+		for suma := objetivo; suma >= t; suma-- {
+			if alcanzable[suma] == nil && alcanzable[suma-t] != nil {
+				camino := append(append([]int{}, alcanzable[suma-t]...), i)
+				alcanzable[suma] = camino
+			}
+		}
+		if alcanzable[objetivo] != nil {
+			break
+		}
+	}
+	return alcanzable[objetivo]
 }

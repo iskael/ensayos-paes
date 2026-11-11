@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError, urlImagen } from '../api.js'
 import { useApi } from '../useApi.js'
-import { NIVELES, EJES, DIFICULTADES } from '../constantes.js'
+import { PRUEBAS, ejesDe, DIFICULTADES } from '../constantes.js'
 import Formula from '../components/Formula.jsx'
 import AlternativaCampos from '../components/AlternativaCampos.jsx'
 
@@ -12,8 +12,8 @@ const ALTERNATIVAS_VACIAS = ['A', 'B', 'C', 'D'].map(alternativaVacia)
 const VACIO = {
   enunciado: '',
   imagen_url: null,
-  eje: EJES[0].valor,
-  nivel: NIVELES[0],
+  eje: 'numeros',
+  nivel: 'M1',
   dificultad: DIFICULTADES[0].valor,
   peso: '',
   examen_fuente_id: '',
@@ -192,7 +192,7 @@ export default function ItemForm() {
           <div className="campo">
             <label htmlFor="eje">Eje</label>
             <select id="eje" value={form.eje} onChange={(e) => actualizarCampo('eje', e.target.value)}>
-              {EJES.map((e) => (
+              {ejesDe(form.nivel).map((e) => (
                 <option key={e.valor} value={e.valor}>
                   {e.etiqueta}
                 </option>
@@ -200,11 +200,18 @@ export default function ItemForm() {
             </select>
           </div>
           <div className="campo">
-            <label htmlFor="nivel">Nivel</label>
-            <select id="nivel" value={form.nivel} onChange={(e) => actualizarCampo('nivel', e.target.value)}>
-              {NIVELES.map((n) => (
-                <option key={n} value={n}>
-                  {n}
+            <label htmlFor="nivel">Prueba</label>
+            <select
+              id="nivel"
+              value={form.nivel}
+              onChange={(e) => {
+                const nivel = e.target.value
+                setForm((f) => ({ ...f, nivel, eje: ejesDe(nivel).some((x) => x.valor === f.eje) ? f.eje : ejesDe(nivel)[0].valor }))
+              }}
+            >
+              {PRUEBAS.map((p) => (
+                <option key={p.nivel} value={p.nivel}>
+                  {p.nombre}
                 </option>
               ))}
             </select>

@@ -251,8 +251,8 @@ func (in itemInput) aDominio() (domain.Item, error) {
 	eje := domain.Eje(in.Eje)
 	nivel := domain.Nivel(in.Nivel)
 	dificultad := domain.Dificultad(in.Dificultad)
-	if in.Enunciado == "" || !eje.Valido() || !nivel.Valido() || !dificultad.Valido() {
-		return domain.Item{}, errors.New("enunciado, eje, nivel o dificultad inválidos")
+	if in.Enunciado == "" || !nivel.Valido() || !domain.EjePerteneceA(eje, nivel) || !dificultad.Valido() {
+		return domain.Item{}, errors.New("enunciado, eje, nivel o dificultad inválidos (el eje debe ser de la prueba)")
 	}
 	alts := make([]domain.Alternativa, 0, len(in.Alternativas))
 	for _, a := range in.Alternativas {

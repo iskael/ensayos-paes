@@ -67,18 +67,21 @@ func (h *ensayoHandler) crear(w http.ResponseWriter, r *http.Request) {
 	for _, e := range in.Ejes {
 		ejes = append(ejes, domain.Eje(e))
 	}
-	if !domain.EjesValidos(ejes) {
-		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Debe seleccionar al menos un eje válido, sin repetir")
+	if !domain.EjesValidos(nivel, ejes) {
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Debe seleccionar al menos un eje válido de la prueba, sin repetir")
 		return
 	}
 	if !domain.CantidadEnsayoValida(in.Cantidad) {
-		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "La cantidad debe ser 10, 20 o 30")
+		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Cantidad de preguntas no permitida")
 		return
 	}
 	modo := domain.ModoLibre
-	if in.Modo != "" && domain.ModoEnsayo(in.Modo) != domain.ModoLibre {
-		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Modo inválido (solo 'libre' disponible en el MVP)")
-		return
+	if in.Modo != "" {
+		modo = domain.ModoEnsayo(in.Modo)
+		if !modo.Valido() {
+			escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Modo inválido (libre, practica o simulacro)")
+			return
+		}
 	}
 
 	detalle, err := h.ensayos.GenerarAleatorio(r.Context(), claims.UsuarioID, nivel, ejes, in.Cantidad, modo)
@@ -176,6 +179,10 @@ func (h *ensayoHandler) guardarRespuestas(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.ensayos.GuardarRespuestas(r.Context(), id, respuestas); err != nil {
+		if errors.Is(err, repo.ErrPreguntaRevisada) {
+			escribirError(w, http.StatusConflict, "PREGUNTA_REVISADA", "Esa pregunta ya se revisó y su respuesta no se puede cambiar")
+			return
+		}
 		if errors.Is(err, repo.ErrNoEncontrado) {
 			escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Alguna pregunta no pertenece a este ensayo")
 			return
@@ -184,6 +191,74 @@ func (h *ensayoHandler) guardarRespuestas(w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ensayoHandler) revelar(w http.ResponseWriter, r *http.Request) {
+	claims, _ := claimsDe(r.Context())
+	id := chi.URLParam(r, "ensayoId")
+	ensayo, aerr := h.obtenerPropioBase(r.Context(), id, claims.UsuarioID)
+	if aerr != nil {
+		h.responderErr(w, aerr)
+		return
+	}
+	if ensayo.Estado != domain.EnsayoEnProgreso {
+		escribirError(w, http.StatusConflict, "ENSAYO_FINALIZADO", "El ensayo ya fue finalizado")
+		return
+	}
+	if ensayo.Modo != domain.ModoPractica {
+		escribirError(w, http.StatusConflict, "MODO_SIN_REVISION", "Solo en modo práctica se revisa cada pregunta antes de terminar")
+		return
+	}
+	it, err := h.ensayos.Revelar(r.Context(), id, chi.URLParam(r, "ensayoItemId"))
+	if errors.Is(err, repo.ErrNoEncontrado) {
+		escribirError(w, http.StatusNotFound, "NO_ENCONTRADO", "La pregunta no pertenece a este ensayo")
+		return
+	}
+	if err != nil {
+		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo revisar la pregunta")
+		return
+	}
+	escribirJSON(w, http.StatusOK, correccionDe(it))
+}
+
+type pruebaResp struct {
+	domain.Prueba
+	PublicadasPorEje map[domain.Eje]int `json:"publicadas_por_eje"`
+}
+
+func (h *ensayoHandler) pruebas(w http.ResponseWriter, r *http.Request) {
+	stock, err := h.ensayos.StockPublicado(r.Context())
+	if err != nil {
+		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo obtener el catálogo de pruebas")
+		return
+	}
+	out := make([]pruebaResp, 0, len(domain.Pruebas))
+	for _, p := range domain.Pruebas {
+		porEje := map[domain.Eje]int{}
+		for _, e := range p.Ejes {
+			porEje[e] = stock[p.Nivel][e]
+		}
+		out = append(out, pruebaResp{Prueba: p, PublicadasPorEje: porEje})
+	}
+	escribirJSON(w, http.StatusOK, out)
+}
+
+type correccionResp struct {
+	RespuestaCorrecta domain.EtiquetaAlternativa `json:"respuesta_correcta"`
+	EsCorrecta        bool                       `json:"es_correcta"`
+	Explicacion       *string                    `json:"explicacion,omitempty"`
+}
+
+func correccionDe(it repo.EnsayoItemDetalle) correccionResp {
+	var c correccionResp
+	for _, a := range it.Alternativas {
+		if a.EsCorrecta {
+			c.RespuestaCorrecta = a.Etiqueta
+		}
+	}
+	c.EsCorrecta = it.RespuestaSeleccionada != nil && *it.RespuestaSeleccionada == c.RespuestaCorrecta
+	c.Explicacion = it.Explicacion
+	return c
 }
 
 func (h *ensayoHandler) enviar(w http.ResponseWriter, r *http.Request) {
@@ -246,18 +321,21 @@ type preguntaEnsayoResp struct {
 	Eje                   domain.Eje                  `json:"eje"`
 	Alternativas          []alternativaPublicaResp    `json:"alternativas"`
 	RespuestaSeleccionada *domain.EtiquetaAlternativa `json:"respuesta_seleccionada,omitempty"`
+	Estimulo              *repo.Estimulo              `json:"estimulo,omitempty"`
+	Correccion            *correccionResp             `json:"correccion,omitempty"`
 }
 
 type ensayoRespT struct {
-	ID          string               `json:"id"`
-	Nivel       domain.Nivel         `json:"nivel"`
-	Ejes        []domain.Eje         `json:"ejes"`
-	Cantidad    int                  `json:"cantidad"`
-	Modo        domain.ModoEnsayo    `json:"modo"`
-	Estado      domain.EstadoEnsayo  `json:"estado"`
-	FechaInicio time.Time            `json:"fecha_inicio"`
-	FechaFin    *time.Time           `json:"fecha_fin,omitempty"`
-	Preguntas   []preguntaEnsayoResp `json:"preguntas"`
+	ID            string               `json:"id"`
+	Nivel         domain.Nivel         `json:"nivel"`
+	Ejes          []domain.Eje         `json:"ejes"`
+	Cantidad      int                  `json:"cantidad"`
+	Modo          domain.ModoEnsayo    `json:"modo"`
+	Estado        domain.EstadoEnsayo  `json:"estado"`
+	FechaInicio   time.Time            `json:"fecha_inicio"`
+	FechaFin      *time.Time           `json:"fecha_fin,omitempty"`
+	LimiteMinutos *int                 `json:"limite_minutos,omitempty"`
+	Preguntas     []preguntaEnsayoResp `json:"preguntas"`
 }
 
 // ensayoResp NO expone la alternativa correcta mientras el ensayo está en
@@ -269,6 +347,11 @@ func ensayoResp(d repo.EnsayoDetalle) ensayoRespT {
 		for _, a := range it.Alternativas {
 			alts = append(alts, alternativaPublicaResp{Etiqueta: a.Etiqueta, Texto: a.Texto, ImagenURL: a.ImagenURL})
 		}
+		var correccion *correccionResp
+		if it.Revisada {
+			c := correccionDe(it)
+			correccion = &c
+		}
 		preguntas = append(preguntas, preguntaEnsayoResp{
 			EnsayoItemID:          it.EnsayoItemID,
 			Orden:                 it.Orden,
@@ -277,13 +360,15 @@ func ensayoResp(d repo.EnsayoDetalle) ensayoRespT {
 			Eje:                   it.Eje,
 			Alternativas:          alts,
 			RespuestaSeleccionada: it.RespuestaSeleccionada,
+			Estimulo:              it.Estimulo,
+			Correccion:            correccion,
 		})
 	}
 	e := d.Ensayo
 	return ensayoRespT{
 		ID: e.ID, Nivel: e.Nivel, Ejes: e.Ejes, Cantidad: e.Cantidad,
 		Modo: e.Modo, Estado: e.Estado, FechaInicio: e.FechaInicio, FechaFin: e.FechaFin,
-		Preguntas: preguntas,
+		LimiteMinutos: e.LimiteMinutos, Preguntas: preguntas,
 	}
 }
 
@@ -307,6 +392,7 @@ type revisionItemResp struct {
 	Peso                  int                         `json:"peso"`
 	Explicacion           *string                     `json:"explicacion,omitempty"`
 	Alternativas          []domain.Alternativa        `json:"alternativas"`
+	Estimulo              *repo.Estimulo              `json:"estimulo,omitempty"`
 }
 
 type desgloseEjeResp struct {
@@ -347,6 +433,7 @@ func resultadoResp(d repo.EnsayoDetalle) resultadoRespT {
 			Orden: it.Orden, Enunciado: it.Enunciado, ImagenURL: it.ImagenURL, Eje: it.Eje,
 			RespuestaSeleccionada: it.RespuestaSeleccionada, RespuestaCorrecta: respuestaCorrecta,
 			EsCorrecta: correcta, Peso: it.PesoSnapshot, Explicacion: it.Explicacion, Alternativas: it.Alternativas,
+			Estimulo: it.Estimulo,
 		})
 	}
 	desglose := domain.CalcularDesglosePorEje(items)

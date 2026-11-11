@@ -1,94 +1,194 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api.js'
 import { useApi } from '../useApi.js'
-import { NIVELES, CANTIDADES, EJES } from '../constantes.js'
+import { useAuth } from '../AuthContext.jsx'
+import { CANTIDADES, MODOS, datosPrueba, etiquetaEje } from '../constantes.js'
+import Hoja from '../components/Hoja.jsx'
+import Icono from '../components/Icono.jsx'
 
-export default function ConfigurarEnsayo() {
-  const [nivel, setNivel] = useState(NIVELES[0])
-  const [ejesElegidos, setEjesElegidos] = useState([])
-  const [cantidad, setCantidad] = useState(CANTIDADES[0])
-  const [error, setError] = useState(null)
-  const [enviando, setEnviando] = useState(false)
+function minutosPara(prueba, cantidad) {
+  return Math.ceil((cantidad * prueba.minutos_oficiales) / prueba.preguntas_oficiales)
+}
+
+function formatearDuracion(min) {
+  if (min < 60) return `${min} min`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return m ? `${h} h ${m} min` : `${h} h`
+}
+
+function ConfigurarPrueba({ prueba, onCerrar }) {
   const { llamar } = useApi()
   const navigate = useNavigate()
+  const ejesConStock = prueba.ejes.filter((e) => (prueba.publicadas_por_eje[e] ?? 0) > 0)
+  const [ejes, setEjes] = useState(ejesConStock)
+  const [modo, setModo] = useState('practica')
+  const [cantidad, setCantidad] = useState(10)
+  const [error, setError] = useState(null)
+  const [enviando, setEnviando] = useState(false)
 
-  function alternarEje(valor) {
-    setEjesElegidos((actuales) =>
-      actuales.includes(valor) ? actuales.filter((e) => e !== valor) : [...actuales, valor],
-    )
+  const disponibles = ejes.reduce((suma, e) => suma + (prueba.publicadas_por_eje[e] ?? 0), 0)
+  const cantidades = CANTIDADES.filter((c) => c <= Math.max(disponibles, 5))
+  const oficial = prueba.preguntas_oficiales
+
+  useEffect(() => {
+    if (cantidad > disponibles && cantidades.length) setCantidad(cantidades[cantidades.length - 1])
+  }, [cantidad, disponibles, cantidades])
+
+  function alternarEje(eje) {
+    setEjes((actuales) => (actuales.includes(eje) ? actuales.filter((e) => e !== eje) : [...actuales, eje]))
   }
 
-  async function alEnviar(evento) {
-    evento.preventDefault()
+  async function comenzar() {
     setError(null)
-    if (ejesElegidos.length === 0) {
-      setError('Elegí al menos un eje')
+    if (ejes.length === 0) {
+      setError('Elegí al menos un tema')
       return
     }
     setEnviando(true)
     try {
-      const ensayo = await llamar((token) =>
-        api.crearEnsayo(token, { nivel, ejes: ejesElegidos, cantidad }),
-      )
+      const ensayo = await llamar((token) => api.crearEnsayo(token, { nivel: prueba.nivel, ejes, cantidad, modo }))
       navigate(`/ensayos/${ensayo.id}`)
     } catch (e) {
       if (e instanceof ApiError && e.codigo === 'STOCK_INSUFICIENTE') {
-        setError(`No hay suficientes preguntas disponibles (máximo ${e.extra?.max_disponible ?? 0}). Elegí menos cantidad o más ejes.`)
-      } else if (e instanceof ApiError) {
-        setError(e.mensaje || 'No se pudo generar el ensayo')
+        setError(
+          prueba.usa_estimulos
+            ? 'No hay textos suficientes para esa cantidad exacta de preguntas. Probá con otra cantidad.'
+            : `Hay solo ${e.extra?.max_disponible ?? 0} preguntas para esos temas. Elegí menos preguntas o más temas.`,
+        )
       } else {
-        setError('No se pudo conectar con el servidor')
+        setError(e instanceof ApiError ? e.mensaje || 'No se pudo generar el ensayo' : 'No se pudo conectar con el servidor')
       }
-    } finally {
       setEnviando(false)
     }
   }
 
+  const modoActual = MODOS.find((m) => m.valor === modo)
+
   return (
-    <div className="pantalla">
-      <div className="tarjeta">
-        <h1>Configurar ensayo</h1>
-        <form onSubmit={alEnviar}>
-          <div className="campo">
-            <label htmlFor="nivel">Nivel</label>
-            <select id="nivel" value={nivel} onChange={(e) => setNivel(e.target.value)}>
-              {NIVELES.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo">
-            <label>Ejes</label>
-            {EJES.map((eje) => (
-              <label key={eje.valor} style={{ display: 'block', marginBottom: 6 }}>
-                <input
-                  type="checkbox"
-                  checked={ejesElegidos.includes(eje.valor)}
-                  onChange={() => alternarEje(eje.valor)}
-                />{' '}
-                {eje.etiqueta}
-              </label>
-            ))}
-          </div>
-          <div className="campo">
-            <label htmlFor="cantidad">Cantidad de preguntas</label>
-            <select id="cantidad" value={cantidad} onChange={(e) => setCantidad(Number(e.target.value))}>
-              {CANTIDADES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          {error && <p className="error">{error}</p>}
-          <button className="boton" type="submit" disabled={enviando}>
-            {enviando ? 'Generando…' : 'Comenzar ensayo'}
+    <Hoja titulo={prueba.nombre} onCerrar={onCerrar}>
+      <span className="etiqueta-campo">Modo</span>
+      <div className="segmentos">
+        {MODOS.map((m) => (
+          <button key={m.valor} type="button" className={'segmento' + (modo === m.valor ? ' activo' : '')} onClick={() => setModo(m.valor)}>
+            {m.etiqueta}
           </button>
-        </form>
+        ))}
       </div>
+      <p className="texto-suave" style={{ fontSize: 14, margin: '8px 0 18px' }}>
+        {modoActual.ayuda}
+      </p>
+
+      {!prueba.usa_estimulos && prueba.ejes.length > 1 && (
+        <>
+          <span className="etiqueta-campo">Temas</span>
+          <div className="chips" style={{ marginBottom: 18 }}>
+            {prueba.ejes.map((e) => {
+              const n = prueba.publicadas_por_eje[e] ?? 0
+              return (
+                <button
+                  key={e}
+                  type="button"
+                  disabled={n === 0}
+                  className={'chip' + (ejes.includes(e) ? ' activo' : '')}
+                  onClick={() => alternarEje(e)}
+                >
+                  {etiquetaEje(e)}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      <span className="etiqueta-campo">Preguntas</span>
+      <div className="chips">
+        {cantidades.map((c) => (
+          <button key={c} type="button" className={'chip' + (cantidad === c ? ' activo' : '')} onClick={() => setCantidad(c)}>
+            {c === oficial ? `${c} · completa` : c}
+          </button>
+        ))}
+      </div>
+
+      <p className="resumen-config">
+        {modo === 'simulacro'
+          ? `Tiempo: ${formatearDuracion(minutosPara(prueba, cantidad))} (proporcional a la prueba oficial de ${oficial} preguntas).`
+          : `${disponibles} preguntas disponibles en los temas elegidos.`}
+      </p>
+      {error && <p className="error">{error}</p>}
+      <button className="boton" type="button" disabled={enviando} onClick={comenzar}>
+        {enviando ? 'Preparando…' : 'Comenzar'}
+      </button>
+    </Hoja>
+  )
+}
+
+export default function ConfigurarEnsayo() {
+  const { llamar } = useApi()
+  const { usuario } = useAuth()
+  const [pruebas, setPruebas] = useState(null)
+  const [enCurso, setEnCurso] = useState(null)
+  const [elegida, setElegida] = useState(null)
+  const [error, setError] = useState(null)
+  const cerrar = useCallback(() => setElegida(null), [])
+
+  useEffect(() => {
+    let cancelado = false
+    llamar((token) => api.listarPruebas(token))
+      .then((p) => !cancelado && setPruebas(p))
+      .catch(() => !cancelado && setError('No se pudo cargar el catálogo de pruebas'))
+    llamar((token) => api.listarEnsayos(token))
+      .then((lista) => !cancelado && setEnCurso(lista.find((e) => e.estado === 'en_progreso') ?? null))
+      .catch(() => {})
+    return () => {
+      cancelado = true
+    }
+  }, [llamar])
+
+  const nombre = (usuario?.nombre ?? '').split(' ')[0]
+
+  return (
+    <div className="contenido">
+      <div className="saludo">
+        <h1>{nombre ? `Hola, ${nombre}` : 'Practicar'}</h1>
+        <p>Elegí una prueba para empezar un ensayo.</p>
+      </div>
+
+      {enCurso && (
+        <Link to={`/ensayos/${enCurso.id}`} className="continuar">
+          <div>
+            <strong>Continuar ensayo</strong>
+            <span>{datosPrueba(enCurso.nivel).nombre} en curso</span>
+          </div>
+          <Icono nombre="adelante" />
+        </Link>
+      )}
+
+      {error && <p className="error">{error}</p>}
+      {!pruebas && !error && <p className="cargando">Cargando…</p>}
+
+      {pruebas && (
+        <div className="grilla-pruebas">
+          {pruebas.map((p) => {
+            const d = datosPrueba(p.nivel)
+            const total = Object.values(p.publicadas_por_eje).reduce((a, b) => a + b, 0)
+            return (
+              <button key={p.nivel} type="button" className="tarjeta-prueba" disabled={total === 0} onClick={() => setElegida(p)}>
+                <span className="icono-prueba" style={{ background: d.color }}>
+                  {d.sigla}
+                </span>
+                <span className="tarjeta-prueba-texto">
+                  <strong>{p.nombre}</strong>
+                  <span>{total > 0 ? `${total.toLocaleString('es-CL')} preguntas` : 'Próximamente'}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {elegida && <ConfigurarPrueba prueba={elegida} onCerrar={cerrar} />}
     </div>
   )
 }
