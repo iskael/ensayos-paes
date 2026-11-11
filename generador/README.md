@@ -1,9 +1,9 @@
 # Generador de ítems (v2, Modo A)
 
 Genera ítems PAES de matemáticas por **plantillas parametrizadas**: la respuesta correcta y los
-distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 139
-plantillas: 99 de M1 (24 de números, 19 de álgebra y funciones, 34 de geometría y 22 de
-probabilidad y estadística) y 40 de M2 (10 por eje); 47 de ellas llevan figura. Reemplaza al
+distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 155
+plantillas: 113 de M1 (28 de números, 25 de álgebra y funciones, 36 de geometría y 24 de
+probabilidad y estadística) y 42 de M2; 48 de ellas llevan figura. Reemplaza al
 `prototipo-ia/` (4 plantillas) como fuente de ítems `generado`. Diseño: `docs/diseno_generacion_ia_v2.md`.
 
 ## Uso
@@ -114,6 +114,16 @@ barras y diferencia de temperaturas desde una tabla.
 entrada, promedio como expresión, crecimiento promedio, pago más frecuente desde un gráfico, monedas,
 puntaje de un juego, dado cargado, diagrama de cajón y cajas con bolitas. Las tablas van como figura
 (`figuras.tabla`), porque el enunciado es texto plano y no admite tablas.
+
+## Modelo de prueba de admisión 2023
+
+`plantillas_modelo_2023.py` agrega 16 plantillas con tipos del Modelo de Prueba de Matemática de admisión 2023 (el mismo
+que comenta la "Resolución modelo de prueba matemática 2022" del DEMRE): vasos llenados hasta una fracción, masa con
+números mixtos, descripción verbal de un porcentaje, tiempo de la luz con notación científica; capacidad desde dos
+fracciones, masa máxima con una diferencia, lados consecutivos desde el área, parámetro para dos soluciones reales, cobro
+con recargo sobre un umbral, cuadrática desde el máximo y un punto; escalera que se desliza, área no barrida por dos
+plumillas (con figura); promedio de aportes en razón, afirmación que se deduce de un percentil (verificada contra todos
+los conjuntos de 6 datos entre 1 y 4) y, en M2, elegir de varios grupos y colorear en fila sin repetir vecinos.
 
 ## Nivel M2
 

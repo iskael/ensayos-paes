@@ -606,3 +606,20 @@ def rectangulo_sombreado(columnas, filas, sombreadas):
             relleno = GRIS if (c, f) in sombreadas else "#ffffff"
             l.poligono([(c, f), (c + 1, f), (c + 1, f + 1), (c, f + 1)], relleno=relleno, grosor=1.3)
     return l.svg()
+
+
+def rectangulo_con_cuartos_de_circulo(largo, ancho, radio, rotulo_largo, rotulo_ancho, rotulo_radio):
+    """Rectángulo con dos cuartos de círculo sombreados con centro en sus esquinas inferiores."""
+    escala = 10 / largo
+    a, h, r = 10, ancho * escala, radio * escala
+    l = Lienzo(-2.4, a + 0.8, -1.6, h + 0.6)
+    l.poligono([(0, 0), (a, 0), (a, h), (0, h)], relleno="#ffffff")
+    for centro, inicio in (((0, 0), 0), ((a, 0), 90)):
+        pts = [centro] + [(centro[0] + r * math.cos(math.radians(inicio + t)), centro[1] + r * math.sin(math.radians(inicio + t)))
+                          for t in range(0, 91, 5)]
+        l.poligono(pts, relleno=GRIS, grosor=1.2)
+    l.linea((0, 0), (r * math.cos(math.radians(45)), r * math.sin(math.radians(45))), grosor=2.4)
+    l.texto((r * 0.5 * math.cos(math.radians(45)), r * 0.5 * math.sin(math.radians(45))), rotulo_radio, dx=10, dy=16, ancla="start", tam=12)
+    l.texto((a / 2, 0), rotulo_largo, dy=20)
+    l.texto((0, h / 2), rotulo_ancho, dx=-8, dy=5, ancla="end")
+    return l.svg()
