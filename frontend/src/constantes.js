@@ -66,6 +66,7 @@ export const MENU_POR_ROL = {
   estudiante: [
     { etiqueta: 'Practicar', ruta: '/', icono: 'inicio', disponible: true },
     { etiqueta: 'Progreso', ruta: '/dashboard', icono: 'progreso', disponible: true },
+    { etiqueta: 'Meta', ruta: '/meta', icono: 'meta', disponible: true },
     { etiqueta: 'Grupos', ruta: '/mis-grupos', icono: 'grupos', disponible: true },
   ],
   profesor: [{ etiqueta: 'Grupos', ruta: '/grupos', icono: 'grupos', disponible: true }],

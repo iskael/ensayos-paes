@@ -17,6 +17,7 @@ const TRAZOS = {
   mal: 'M7 7l10 10M17 7 7 17',
   luna: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z',
   letra: 'M4 20 9.5 5h1L16 20M6.5 14h7M17 20l2.5-7h.5l2.5 7',
+  meta: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01',
 }
 
 export default function Icono({ nombre, tam = 22, relleno = false, titulo }) {
