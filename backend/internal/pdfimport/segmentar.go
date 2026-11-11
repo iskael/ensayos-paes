@@ -18,11 +18,11 @@ type PreguntaCruda struct {
 }
 
 var reInicioPregunta = regexp.MustCompile(`^\s*(\d{1,3})[.)]\s+(.*)$`)
-var reInicioAlternativa = regexp.MustCompile(`^\s*([A-Da-d])[.)]\s+(.*)$`)
+var reInicioAlternativa = regexp.MustCompile(`^\s*([A-Ea-e])[.)]\s+(.*)$`)
 
 // SegmentarPreguntas aplica una heurística de "extracción asistida": separa
 // el texto en bloques por numeración ("1.", "2)", ...) y, dentro de cada
-// bloque, identifica alternativas A-D por su marcador ("A)", "B.", ...).
+// bloque, identifica alternativas A-E por su marcador ("A)", "B.", ...).
 //
 // Es best-effort a propósito: NUNCA determina cuál alternativa es correcta
 // (eso normalmente no está en el PDF del examen, sino en una clave aparte),
@@ -88,9 +88,9 @@ func procesarBloque(numero int, lineas []string) PreguntaCruda {
 		}
 	}
 
-	alternativas := make([]AlternativaCruda, 0, 4)
+	alternativas := make([]AlternativaCruda, 0, 5)
 	for _, etq := range ordenEtiquetas {
-		if len(alternativas) >= 4 {
+		if len(alternativas) >= 5 {
 			break
 		}
 		txt := strings.TrimSpace(strings.Join(textoPorEtiqueta[etq], " "))

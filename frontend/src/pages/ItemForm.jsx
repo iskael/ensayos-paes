@@ -6,12 +6,8 @@ import { NIVELES, EJES, DIFICULTADES } from '../constantes.js'
 import Formula from '../components/Formula.jsx'
 import AlternativaCampos from '../components/AlternativaCampos.jsx'
 
-const ALTERNATIVAS_VACIAS = ['A', 'B', 'C', 'D'].map((etiqueta) => ({
-  etiqueta,
-  texto: '',
-  imagen_url: null,
-  es_correcta: false,
-}))
+const alternativaVacia = (etiqueta) => ({ etiqueta, texto: '', imagen_url: null, es_correcta: false })
+const ALTERNATIVAS_VACIAS = ['A', 'B', 'C', 'D'].map(alternativaVacia)
 
 const VACIO = {
   enunciado: '',
@@ -258,6 +254,24 @@ export default function ItemForm() {
               subiendo={subiendoImagen === alt.etiqueta}
             />
           ))}
+
+          {form.alternativas.length === 4 ? (
+            <button
+              type="button"
+              className="boton-secundario"
+              onClick={() => setForm((f) => ({ ...f, alternativas: [...f.alternativas, alternativaVacia('E')] }))}
+            >
+              Agregar alternativa E (suficiencia de datos)
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="boton-secundario"
+              onClick={() => setForm((f) => ({ ...f, alternativas: f.alternativas.filter((a) => a.etiqueta !== 'E') }))}
+            >
+              Quitar alternativa E
+            </button>
+          )}
 
           {error && <p className="error">{error}</p>}
           <button className="boton" type="submit" disabled={enviando} style={{ marginTop: 8 }}>

@@ -29,16 +29,24 @@ type Item struct {
 	FechaCreacion  time.Time     `json:"fecha_creacion"`
 }
 
-// ValidarAlternativas: exactamente 4, etiquetas A-D sin repetir, una sola correcta.
+// ValidarAlternativas: 4 (A-D) o 5 (A-E) alternativas, con las etiquetas consecutivas desde A, sin repetir y una sola correcta.
+// Las de 5 son las de suficiencia de datos de la PAES M2.
 func ValidarAlternativas(alts []Alternativa) error {
-	if len(alts) != 4 {
-		return fmt.Errorf("un ítem debe tener exactamente 4 alternativas")
+	if len(alts) != 4 && len(alts) != 5 {
+		return fmt.Errorf("un ítem debe tener 4 o 5 alternativas")
+	}
+	permitidas := map[EtiquetaAlternativa]bool{}
+	for _, e := range ordenEtiquetas[:len(alts)] {
+		permitidas[e] = true
 	}
 	vistas := map[EtiquetaAlternativa]bool{}
 	correctas := 0
 	for _, a := range alts {
 		if !a.Etiqueta.Valida() {
 			return fmt.Errorf("etiqueta de alternativa inválida: %s", a.Etiqueta)
+		}
+		if !permitidas[a.Etiqueta] {
+			return fmt.Errorf("con %d alternativas las etiquetas deben ir de A a %s", len(alts), ordenEtiquetas[len(alts)-1])
 		}
 		if vistas[a.Etiqueta] {
 			return fmt.Errorf("etiqueta de alternativa repetida: %s", a.Etiqueta)

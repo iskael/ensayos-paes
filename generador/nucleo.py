@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from typing import Callable
 
-ETIQUETAS = ["A", "B", "C", "D"]
+ETIQUETAS = ["A", "B", "C", "D", "E"]
 PESO_DEFECTO = 100
 
 EJES = ("numeros", "algebra_funciones", "geometria", "probabilidad_estadistica")
@@ -175,8 +175,8 @@ def validar(p: Propuesta) -> list[str]:
     fallas = []
     if p.dificultad not in DIFICULTADES:
         fallas.append("dificultad inválida")
-    if len(p.distractores) != 3:
-        fallas.append("no tiene 3 distractores")
+    if len(p.distractores) != 3 and not (len(p.distractores) == 4 and p.orden_fijo):
+        fallas.append("no tiene 3 distractores (ni 4 con alternativas de orden fijo)")
     opciones = [p.correcta] + p.distractores
     if len({o.valor for o in opciones}) != len(opciones):
         fallas.append("valores repetidos entre alternativas")
