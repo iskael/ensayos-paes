@@ -850,6 +850,7 @@ img {
 
 .estimulo-texto p {
   margin: 0 0 12px;
+  white-space: pre-line;
 }
 
 .estimulo-texto .parrafo-numerado {
