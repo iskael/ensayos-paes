@@ -1,9 +1,9 @@
 # Generador de ítems (v2, Modo A)
 
 Genera ítems PAES de matemáticas por **plantillas parametrizadas**: la respuesta correcta y los
-distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 114
+distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 134
 plantillas: 94 de M1 (19 de números, 19 de álgebra y funciones, 34 de geometría y 22 de
-probabilidad y estadística) y 20 de M2 (5 por eje); 42 de ellas llevan figura. Reemplaza al
+probabilidad y estadística) y 40 de M2 (10 por eje); 42 de ellas llevan figura. Reemplaza al
 `prototipo-ia/` (4 plantillas) como fuente de ítems `generado`. Diseño: `docs/diseno_generacion_ia_v2.md`.
 
 ## Uso
@@ -116,6 +116,14 @@ infinitas soluciones, crecimiento y decaimiento exponencial, traslación de par�
 seno y coseno; razones trigonométricas, homotecia, ángulo inscrito y central, cuerdas que se cortan;
 combinatoria, permutaciones, probabilidad condicional, binomial y total. Quedan fuera las preguntas
 de suficiencia de datos, que usan cinco alternativas fijas y la app trabaja con cuatro.
+
+`plantillas_m2_paes.py` agrega 20 plantillas M2 (5 por eje) con tipos de las PAES M2 de invierno 2025, regular 2025 e
+invierno 2026: punto que divide un intervalo en una razón, interés generado, valor inicial tras variaciones sucesivas,
+cambio de base con logaritmos aproximados, intensidad sonora; vértice con parámetro, altura máxima de un lanzamiento,
+reflexión de una parábola, función potencia al escalar la variable, dos cultivos que se duplican; altura y proyección
+sobre la hipotenusa, área entre un círculo y un polígono inscrito, rotación de un punto, tangente y secante, homotecia
+de razón negativa; condicional desde "ambos" y "solo uno", lotería, orden al azar con condición en los extremos,
+transformación lineal de los datos y ganancia esperada.
 
 ## Convenciones
 
