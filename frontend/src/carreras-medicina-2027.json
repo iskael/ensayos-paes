@@ -294,6 +294,20 @@
   "corte_2026": 907.55
  },
  {
+  "codigo": "49004",
+  "universidad": "Universidad Autónoma de Chile",
+  "sede": "Santiago (Providencia)",
+  "nem": 20,
+  "ranking": 25,
+  "cl": 20,
+  "m1": 25,
+  "m2": 0,
+  "hcs": 0,
+  "ciencias": 10,
+  "historia_o_ciencias": false,
+  "corte_2026": 906.9
+ },
+ {
   "codigo": "39118",
   "universidad": "Universidad Mayor",
   "sede": "Santiago",
@@ -612,20 +626,6 @@
   "m2": 0,
   "hcs": 0,
   "ciencias": 20,
-  "historia_o_ciencias": false,
-  "corte_2026": null
- },
- {
-  "codigo": "49004",
-  "universidad": "Universidad Autónoma de Chile",
-  "sede": "Santiago",
-  "nem": 20,
-  "ranking": 25,
-  "cl": 20,
-  "m1": 25,
-  "m2": 0,
-  "hcs": 0,
-  "ciencias": 10,
   "historia_o_ciencias": false,
   "corte_2026": null
  }

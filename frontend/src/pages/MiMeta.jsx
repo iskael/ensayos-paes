@@ -91,7 +91,10 @@ export default function MiMeta() {
   const lista = carreras
     .map((c) => ({ ...c, ponderado: ponderado(c, puntajes) }))
     .filter((c) => !filtro || `${c.universidad} ${c.sede}`.toLowerCase().includes(filtro))
-    .sort((a, b) => (b.ponderado - (b.corte_2026 ?? 0)) - (a.ponderado - (a.corte_2026 ?? 0)))
+    .sort((a, b) => {
+      if (!a.corte_2026 || !b.corte_2026) return (b.corte_2026 ? 1 : 0) - (a.corte_2026 ? 1 : 0)
+      return completo ? b.ponderado - b.corte_2026 - (a.ponderado - a.corte_2026) : b.corte_2026 - a.corte_2026
+    })
   const alcanzables = lista.filter((c) => c.corte_2026 && c.ponderado >= c.corte_2026).length
 
   function cambiar(clave, valor) {
