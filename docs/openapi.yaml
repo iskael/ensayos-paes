@@ -320,6 +320,8 @@ paths:
 
   # ---------------- Dashboard (estudiante) ----------------
   /dashboard/resumen:
+    parameters:
+      - { name: nivel, in: query, required: false, description: 'Filtra por prueba', schema: { $ref: '#/components/schemas/Nivel' } }
     get:
       tags: [Dashboard]
       operationId: dashboardResumen
@@ -333,6 +335,8 @@ paths:
         '401': { $ref: '#/components/responses/NoAutorizado' }
 
   /dashboard/evolucion:
+    parameters:
+      - { name: nivel, in: query, required: false, description: 'Filtra por prueba', schema: { $ref: '#/components/schemas/Nivel' } }
     get:
       tags: [Dashboard]
       operationId: dashboardEvolucion
@@ -1134,6 +1138,9 @@ components:
           items: { $ref: '#/components/schemas/Eje' }
         cantidad: { $ref: '#/components/schemas/CantidadEnsayo' }
         modo: { $ref: '#/components/schemas/ModoEnsayo' }
+        electivo:
+          description: 'Solo en CIENCIAS: biologia, fisica o quimica. Reparte como la PAES (54 de cada 80 del módulo común en partes iguales, el resto del electivo) e ignora ejes.'
+          allOf: [{ $ref: '#/components/schemas/Eje' }]
     PreguntaEnsayo:
       description: Ítem visible para el estudiante (sin la respuesta correcta).
       type: object

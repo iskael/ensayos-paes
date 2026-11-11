@@ -74,7 +74,25 @@ func DistribuirCantidad(cantidad int, ejes []Eje, disponible map[Eje]int) (map[E
 			objetivo[e]++
 		}
 	}
+	return completarObjetivo(ejes, objetivo, disponible)
+}
 
+// ObjetivoCiencias reparte un ensayo de Ciencias como la PAES: 54 de cada 80 preguntas son del módulo común, en partes
+// iguales entre Biología, Física y Química, y las 26 restantes son del módulo electivo elegido.
+func ObjetivoCiencias(cantidad int, electivo Eje) map[Eje]int {
+	comun := (cantidad*54 + 40) / 80
+	porEje := comun / 3
+	objetivo := map[Eje]int{EjeBiologia: porEje, EjeFisica: porEje, EjeQuimica: porEje}
+	objetivo[electivo] += cantidad - 3*porEje
+	return objetivo
+}
+
+// DistribuirConObjetivo es como DistribuirCantidad, pero con la cuota de cada eje ya fijada.
+func DistribuirConObjetivo(ejes []Eje, objetivo map[Eje]int, disponible map[Eje]int) (map[Eje]int, int) {
+	return completarObjetivo(ejes, objetivo, disponible)
+}
+
+func completarObjetivo(ejes []Eje, objetivo map[Eje]int, disponible map[Eje]int) (map[Eje]int, int) {
 	seleccion := map[Eje]int{}
 	capacidadExtra := map[Eje]int{}
 	faltante := 0

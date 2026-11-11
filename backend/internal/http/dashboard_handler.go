@@ -20,12 +20,28 @@ type dashboardResumenResp struct {
 	DesempenoPorEje []desgloseEjeResp `json:"desempeno_por_eje"`
 }
 
+// finalizadosEnPrueba filtra por el parámetro opcional ?nivel= (una prueba); sin él, devuelve todos.
+func (h *dashboardHandler) finalizadosEnPrueba(r *http.Request, usuarioID string) ([]domain.Ensayo, domain.Nivel, error) {
+	nivel := domain.Nivel(r.URL.Query().Get("nivel"))
+	todos, err := h.ensayos.FinalizadosPorEstudiante(r.Context(), usuarioID)
+	if err != nil || nivel == "" {
+		return todos, nivel, err
+	}
+	out := make([]domain.Ensayo, 0, len(todos))
+	for _, e := range todos {
+		if e.Nivel == nivel {
+			out = append(out, e)
+		}
+	}
+	return out, nivel, nil
+}
+
 func (h *dashboardHandler) resumen(w http.ResponseWriter, r *http.Request) {
 	claims, _ := claimsDe(r.Context())
 
 	// FinalizadosPorEstudiante viene ordenado por fecha_fin ASC: el último
 	// elemento es el más reciente (ultimo_puntaje) sin necesidad de otra consulta.
-	finalizados, err := h.ensayos.FinalizadosPorEstudiante(r.Context(), claims.UsuarioID)
+	finalizados, nivel, err := h.finalizadosEnPrueba(r, claims.UsuarioID)
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo calcular el resumen")
 		return
@@ -49,7 +65,7 @@ func (h *dashboardHandler) resumen(w http.ResponseWriter, r *http.Request) {
 		resp.PromedioPuntaje = &promedio
 	}
 
-	items, err := h.ensayos.DesempenoPorEje(r.Context(), []string{claims.UsuarioID})
+	items, err := h.ensayos.DesempenoPorEjeEnPrueba(r.Context(), []string{claims.UsuarioID}, nivel)
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo calcular el desempeño por eje")
 		return
@@ -71,7 +87,7 @@ type puntoEvolucionResp struct {
 
 func (h *dashboardHandler) evolucion(w http.ResponseWriter, r *http.Request) {
 	claims, _ := claimsDe(r.Context())
-	finalizados, err := h.ensayos.FinalizadosPorEstudiante(r.Context(), claims.UsuarioID)
+	finalizados, _, err := h.finalizadosEnPrueba(r, claims.UsuarioID)
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo obtener la evolución")
 		return

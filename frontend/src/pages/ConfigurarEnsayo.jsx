@@ -25,10 +25,13 @@ function ConfigurarPrueba({ prueba, onCerrar }) {
   const [ejes, setEjes] = useState(ejesConStock)
   const [modo, setModo] = useState('practica')
   const [cantidad, setCantidad] = useState(10)
+  const [electivo, setElectivo] = useState('')
+  const esCiencias = prueba.nivel === 'CIENCIAS'
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
 
-  const disponibles = ejes.reduce((suma, e) => suma + (prueba.publicadas_por_eje[e] ?? 0), 0)
+  const ejesEfectivos = esCiencias && electivo ? prueba.ejes : ejes
+  const disponibles = ejesEfectivos.reduce((suma, e) => suma + (prueba.publicadas_por_eje[e] ?? 0), 0)
   const cantidades = CANTIDADES.filter((c) => c <= Math.max(disponibles, 5))
   const oficial = prueba.preguntas_oficiales
 
@@ -42,13 +45,18 @@ function ConfigurarPrueba({ prueba, onCerrar }) {
 
   async function comenzar() {
     setError(null)
-    if (ejes.length === 0) {
+    if (ejesEfectivos.length === 0) {
       setError('Elegí al menos un tema')
       return
     }
     setEnviando(true)
     try {
-      const ensayo = await llamar((token) => api.crearEnsayo(token, { nivel: prueba.nivel, ejes, cantidad, modo }))
+      const cuerpo = { nivel: prueba.nivel, ejes, cantidad, modo }
+      if (esCiencias && electivo) {
+        cuerpo.electivo = electivo
+        cuerpo.ejes = prueba.ejes
+      }
+      const ensayo = await llamar((token) => api.crearEnsayo(token, cuerpo))
       navigate(`/ensayos/${ensayo.id}`)
     } catch (e) {
       if (e instanceof ApiError && e.codigo === 'STOCK_INSUFICIENTE') {
@@ -80,7 +88,23 @@ function ConfigurarPrueba({ prueba, onCerrar }) {
         {modoActual.ayuda}
       </p>
 
-      {!prueba.usa_estimulos && prueba.ejes.length > 1 && (
+      {esCiencias && (
+        <>
+          <span className="etiqueta-campo">Módulo electivo</span>
+          <div className="segmentos" style={{ marginBottom: 6 }}>
+            {[['', 'Ninguno'], ['biologia', 'Biología'], ['fisica', 'Física'], ['quimica', 'Química']].map(([v, t]) => (
+              <button key={v} type="button" className={'segmento' + (electivo === v ? ' activo' : '')} onClick={() => setElectivo(v)}>
+                {t}
+              </button>
+            ))}
+          </div>
+          <p className="texto-suave" style={{ fontSize: 14, margin: '0 0 18px' }}>
+            {electivo ? 'Como en la PAES: 54 de cada 80 preguntas del módulo común y el resto del electivo.' : 'Elegí los temas libremente.'}
+          </p>
+        </>
+      )}
+
+      {!prueba.usa_estimulos && prueba.ejes.length > 1 && !(esCiencias && electivo) && (
         <>
           <span className="etiqueta-campo">Temas</span>
           <div className="chips" style={{ marginBottom: 18 }}>

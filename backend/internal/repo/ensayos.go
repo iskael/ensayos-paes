@@ -93,7 +93,7 @@ func (r *Ensayos) disponibilidadPorEje(ctx context.Context, nivel domain.Nivel, 
 
 // GenerarAleatorio aplica RN-01: filtra por publicado+nivel+eje, distribuye
 // por eje (domain.DistribuirCantidad) y, si falta stock, no crea el ensayo.
-func (r *Ensayos) GenerarAleatorio(ctx context.Context, estudianteID string, nivel domain.Nivel, ejes []domain.Eje, cantidad int, modo domain.ModoEnsayo) (EnsayoDetalle, error) {
+func (r *Ensayos) GenerarAleatorio(ctx context.Context, estudianteID string, nivel domain.Nivel, ejes []domain.Eje, cantidad int, modo domain.ModoEnsayo, objetivo map[domain.Eje]int) (EnsayoDetalle, error) {
 	if prueba, _ := domain.PruebaDe(nivel); prueba.UsaEstimulos {
 		return r.generarPorEstimulos(ctx, estudianteID, nivel, ejes, cantidad, modo)
 	}
@@ -101,7 +101,13 @@ func (r *Ensayos) GenerarAleatorio(ctx context.Context, estudianteID string, niv
 	if err != nil {
 		return EnsayoDetalle{}, err
 	}
-	seleccion, faltante := domain.DistribuirCantidad(cantidad, ejes, disp)
+	var seleccion map[domain.Eje]int
+	var faltante int
+	if objetivo != nil {
+		seleccion, faltante = domain.DistribuirConObjetivo(ejes, objetivo, disp)
+	} else {
+		seleccion, faltante = domain.DistribuirCantidad(cantidad, ejes, disp)
+	}
 	if faltante > 0 {
 		total := 0
 		for _, n := range disp {
@@ -519,6 +525,11 @@ func (r *Ensayos) Finalizar(ctx context.Context, ensayoID string) (domain.Ensayo
 // domain.CalcularDesglosePorEje. Con un solo id sirve para el dashboard
 // individual (Fase 4); con varios, para el desempeño agregado de un grupo (Fase 5).
 func (r *Ensayos) DesempenoPorEje(ctx context.Context, estudianteIDs []string) ([]domain.ItemResultado, error) {
+	return r.DesempenoPorEjeEnPrueba(ctx, estudianteIDs, "")
+}
+
+// DesempenoPorEjeEnPrueba es DesempenoPorEje limitado a una prueba; con nivel vacío considera todas.
+func (r *Ensayos) DesempenoPorEjeEnPrueba(ctx context.Context, estudianteIDs []string, nivel domain.Nivel) ([]domain.ItemResultado, error) {
 	if len(estudianteIDs) == 0 {
 		return nil, nil
 	}
@@ -526,8 +537,8 @@ func (r *Ensayos) DesempenoPorEje(ctx context.Context, estudianteIDs []string) (
 	           FROM ensayo_items ei
 	           JOIN ensayos e ON e.id = ei.ensayo_id
 	           JOIN items i ON i.id = ei.item_id
-	           WHERE e.estudiante_id = ANY($1) AND e.estado = 'finalizado'`
-	rows, err := r.pool.Query(ctx, q, estudianteIDs)
+	           WHERE e.estudiante_id = ANY($1) AND e.estado = 'finalizado' AND ($2 = '' OR e.nivel::text = $2)`
+	rows, err := r.pool.Query(ctx, q, estudianteIDs, string(nivel))
 	if err != nil {
 		return nil, err
 	}

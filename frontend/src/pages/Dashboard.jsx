@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { api } from '../api.js'
 import { useApi } from '../useApi.js'
-import { etiquetaEje } from '../constantes.js'
+import { etiquetaEje, PRUEBAS } from '../constantes.js'
 
 function formatearFecha(fechaIso) {
   const d = new Date(fechaIso)
@@ -15,12 +15,13 @@ export default function Dashboard() {
   const [resumen, setResumen] = useState(null)
   const [evolucion, setEvolucion] = useState(null)
   const [error, setError] = useState(null)
+  const [nivel, setNivel] = useState('')
 
   useEffect(() => {
     let cancelado = false
     Promise.all([
-      llamar((token) => api.dashboardResumen(token)),
-      llamar((token) => api.dashboardEvolucion(token)),
+      llamar((token) => api.dashboardResumen(token, nivel)),
+      llamar((token) => api.dashboardEvolucion(token, nivel)),
     ])
       .then(([r, e]) => {
         if (cancelado) return
@@ -33,7 +34,20 @@ export default function Dashboard() {
     return () => {
       cancelado = true
     }
-  }, [llamar])
+  }, [llamar, nivel])
+
+  const filtros = (
+    <div className="chips" style={{ margin: '4px 0 14px' }}>
+      <button type="button" className={'chip' + (nivel === '' ? ' activo' : '')} onClick={() => setNivel('')}>
+        Todas
+      </button>
+      {PRUEBAS.map((p) => (
+        <button key={p.nivel} type="button" className={'chip' + (nivel === p.nivel ? ' activo' : '')} onClick={() => setNivel(p.nivel)}>
+          {p.nombre}
+        </button>
+      ))}
+    </div>
+  )
 
   if (error) {
     return (
@@ -49,8 +63,9 @@ export default function Dashboard() {
     return (
       <div className="contenido">
         <h1>Mi progreso</h1>
+        {filtros}
         <div className="panel vacio">
-          <p>Todavía no rendiste ningún ensayo.</p>
+          <p>{nivel ? 'Todavía no rendiste ensayos de esta prueba.' : 'Todavía no rendiste ningún ensayo.'}</p>
           <Link to="/" className="boton">
             Rendir mi primer ensayo
           </Link>
@@ -72,6 +87,7 @@ export default function Dashboard() {
     <div className="contenido">
       <div>
         <h1>Mi progreso</h1>
+        {filtros}
 
         <div className="dashboard-tarjetas">
           {metricas.map(([valor, etiqueta]) => (
