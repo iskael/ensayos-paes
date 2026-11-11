@@ -9,6 +9,7 @@ import ConfigurarEnsayo from './pages/ConfigurarEnsayo.jsx'
 import RendirEnsayo from './pages/RendirEnsayo.jsx'
 import Resultado from './pages/Resultado.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import MiMeta from './pages/MiMeta.jsx'
 import BancoExamenes from './pages/BancoExamenes.jsx'
 import ExamenForm from './pages/ExamenForm.jsx'
 import ItemForm from './pages/ItemForm.jsx'
@@ -58,6 +59,16 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <Resultado />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/meta"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <MiMeta />
             </LayoutAutenticado>
           </RutaPrivada>
         }
