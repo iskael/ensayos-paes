@@ -80,11 +80,14 @@ const (
 	AltB EtiquetaAlternativa = "B"
 	AltC EtiquetaAlternativa = "C"
 	AltD EtiquetaAlternativa = "D"
+	AltE EtiquetaAlternativa = "E"
 )
+
+var ordenEtiquetas = []EtiquetaAlternativa{AltA, AltB, AltC, AltD, AltE}
 
 func (e EtiquetaAlternativa) Valida() bool {
 	switch e {
-	case AltA, AltB, AltC, AltD:
+	case AltA, AltB, AltC, AltD, AltE:
 		return true
 	}
 	return false

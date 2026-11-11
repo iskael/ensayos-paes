@@ -44,3 +44,25 @@ func TestValidarAlternativas_EtiquetaRepetida(t *testing.T) {
 		t.Fatal("esperaba error por etiqueta repetida")
 	}
 }
+
+func TestValidarAlternativas_CincoValidas(t *testing.T) {
+	alts := append(alternativasBase(-1), Alternativa{Etiqueta: AltE, Texto: "x", EsCorrecta: true})
+	if err := ValidarAlternativas(alts); err != nil {
+		t.Fatalf("5 alternativas A-E deberían ser válidas: %v", err)
+	}
+}
+
+func TestValidarAlternativas_CuatroConE(t *testing.T) {
+	alts := alternativasBase(0)
+	alts[3].Etiqueta = AltE
+	if err := ValidarAlternativas(alts); err == nil {
+		t.Fatal("con 4 alternativas no debería aceptarse la etiqueta E")
+	}
+}
+
+func TestValidarAlternativas_Seis(t *testing.T) {
+	alts := append(alternativasBase(0), Alternativa{Etiqueta: AltE, Texto: "x"}, Alternativa{Etiqueta: "F", Texto: "x"})
+	if err := ValidarAlternativas(alts); err == nil {
+		t.Fatal("esperaba error por 6 alternativas")
+	}
+}

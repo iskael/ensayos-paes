@@ -25,7 +25,7 @@
 
 ## 3. Pipeline de validación (capas)
 
-1. **Estructural:** exactamente 4 alternativas (A–D), una sola correcta, todas distintas.
+1. **Estructural:** 4 alternativas (A–D), o 5 (A–E) en las de suficiencia de datos; una sola correcta, todas distintas.
 2. **Simbólica (sympy):** re-deriva la respuesta de forma independiente y la compara con la marcada; verifica que ningún distractor coincida con la correcta y que los valores sean válidos.
 3. **Crítica con LLM (opcional):** revisa ambigüedad del enunciado, unicidad de la respuesta y alineación al temario.
 4. **Aprobación humana (gate final):** el admin revisa, edita y aprueba/rechaza. Solo entonces pasa a `publicado`.

@@ -21,6 +21,7 @@ import plantillas_m2  # noqa: F401
 import plantillas_m2_paes  # noqa: F401
 import plantillas_numeros_figuras  # noqa: F401
 import plantillas_modelo_2023  # noqa: F401
+import plantillas_suficiencia  # noqa: F401
 import plantillas_probabilidad  # noqa: F401
 from nucleo import REGISTRO, Descartar, armar_item, validar
 
@@ -123,7 +124,7 @@ def a_reporte(items, fallas, descartes) -> str:
         *[f"  {d}: {n}" for d, n in sorted(por_dificultad.items())],
         "",
         "Posición de la alternativa correcta:",
-        "  " + "  ".join(f"{e}={posicion[e]}" for e in "ABCD"),
+        "  " + "  ".join(f"{e}={posicion[e]}" for e in "ABCDE"),
         "",
         "Por plantilla (aprobados / combinaciones descartadas):",
         *[f"  {pl.eje:<26} {pl.nombre:<40} {por_plantilla[pl.nombre]:>3} / {descartes[pl.nombre]}" for pl in REGISTRO],

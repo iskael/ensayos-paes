@@ -67,9 +67,11 @@ class TestLote(unittest.TestCase):
         claves = Counter((i["enunciado"], i["imagen_url"]) for i in self.items)
         self.assertEqual(max(claves.values()), 1)
         for it in self.items:
-            self.assertEqual([a["etiqueta"] for a in it["alternativas"]], ETIQUETAS)
+            n = len(it["alternativas"])
+            self.assertIn(n, (4, 5))
+            self.assertEqual([a["etiqueta"] for a in it["alternativas"]], ETIQUETAS[:n])
             self.assertEqual(sum(a["es_correcta"] for a in it["alternativas"]), 1)
-            self.assertEqual(len({a["texto"] for a in it["alternativas"]}), 4)
+            self.assertEqual(len({a["texto"] for a in it["alternativas"]}), n)
             self.assertIn(it["dificultad"], DIFICULTADES)
             self.assertEqual((it["origen"], it["estado"]), ("generado", "borrador"))
             self.assertRegex(it["explicacion"], "Errores frecuentes:|Las demás alternativas:")

@@ -887,7 +887,8 @@ components:
       enum: [PAES_Regular, PAES_Invierno, PDT]
     EtiquetaAlternativa:
       type: string
-      enum: [A, B, C, D]
+      enum: [A, B, C, D, E]
+      description: 'E solo existe en ítems de 5 alternativas (suficiencia de datos de la PAES M2)' 
     ModoEnsayo:
       type: string
       enum: [libre]
@@ -1033,7 +1034,8 @@ components:
         alternativas:
           type: array
           minItems: 4
-          maxItems: 4
+          maxItems: 5
+          description: '4 alternativas (A-D) o 5 (A-E, suficiencia de datos); etiquetas consecutivas desde A y una sola correcta'
           items: { $ref: '#/components/schemas/AlternativaInput' }
     Item:
       type: object

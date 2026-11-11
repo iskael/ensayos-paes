@@ -377,7 +377,7 @@ func (h *bancoHandler) eliminarItem(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// publicarItem exige peso asignado y 4 alternativas válidas (RN-04).
+// publicarItem exige peso asignado y 4 o 5 alternativas válidas (RN-04).
 func (h *bancoHandler) publicarItem(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "itemId")
 	it, err := h.items.PorID(r.Context(), id)
@@ -421,7 +421,7 @@ func (h *bancoHandler) ocultarItem(w http.ResponseWriter, r *http.Request) {
 // ---------------- Importación de PDF (asistida) ----------------
 
 // importarPdf extrae texto del PDF y segmenta preguntas candidatas por
-// heurística (numeración + marcadores A-D). Los ítems creados quedan en
+// heurística (numeración + marcadores A-E). Los ítems creados quedan en
 // 'borrador' con origen 'oficial' y SIN alternativa correcta marcada: el
 // validador de publicación (domain.ValidarAlternativas) ya impide
 // publicarlos hasta que el admin los revise y complete (RN-04).

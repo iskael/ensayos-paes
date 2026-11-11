@@ -74,8 +74,8 @@
 - `id`, `examen_fuente_id` → ExamenFuente (nullable si suelto/generado), `enunciado` (texto con soporte LaTeX), `imagen_url` (nullable), `eje`, `nivel`, `dificultad`, `origen`, `estado`, `peso` (entero, puntos), `explicacion` (nullable), `fecha_creacion`.
 
 **Alternativa**
-- `id`, `item_id` → Item, `etiqueta` (`A|B|C|D`), `texto` (LaTeX), `imagen_url` (nullable), `es_correcta` (bool).
-- Cada ítem tiene **exactamente 4 alternativas** (A–D, estándar PAES); exactamente una con `es_correcta = true`.
+- `id`, `item_id` → Item, `etiqueta` (`A|B|C|D|E`), `texto` (LaTeX), `imagen_url` (nullable), `es_correcta` (bool).
+- Cada ítem tiene **4 alternativas** (A–D, estándar PAES) o **5** (A–E, solo las preguntas de suficiencia de datos de M2, que en la PAES usan cinco opciones fijas); exactamente una con `es_correcta = true`.
 
 **Ensayo** (sesión de práctica de un estudiante)
 - `id`, `estudiante_id` → Usuario, `nivel`, `ejes` (lista), `cantidad_solicitada`, `modo` (`libre`; `cronometrado` en v2), `estado` (`en_progreso|finalizado`), `fecha_inicio`, `fecha_fin` (nullable), `puntaje` (0–1000, nullable hasta finalizar), `puntos_obtenidos`, `puntos_posibles`, `correctas`, `total`.
