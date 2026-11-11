@@ -13,6 +13,8 @@ import (
 
 var ErrStockInsuficiente = errors.New("stock insuficiente")
 
+var ErrPreguntaRevisada = errors.New("la pregunta ya fue revisada en modo práctica")
+
 type StockInsuficienteError struct {
 	MaxDisponible     int
 	DisponiblesPorEje map[domain.Eje]int
@@ -46,6 +48,16 @@ type EnsayoItemDetalle struct {
 	Alternativas          []domain.Alternativa
 	RespuestaSeleccionada *domain.EtiquetaAlternativa
 	EsCorrecta            *bool
+	Revisada              bool
+	Estimulo              *Estimulo
+}
+
+type Estimulo struct {
+	ID        string  `json:"id"`
+	Titulo    *string `json:"titulo,omitempty"`
+	Texto     string  `json:"texto"`
+	ImagenURL *string `json:"imagen_url,omitempty"`
+	Fuente    *string `json:"fuente,omitempty"`
 }
 
 type EnsayoDetalle struct {
@@ -82,6 +94,9 @@ func (r *Ensayos) disponibilidadPorEje(ctx context.Context, nivel domain.Nivel, 
 // GenerarAleatorio aplica RN-01: filtra por publicado+nivel+eje, distribuye
 // por eje (domain.DistribuirCantidad) y, si falta stock, no crea el ensayo.
 func (r *Ensayos) GenerarAleatorio(ctx context.Context, estudianteID string, nivel domain.Nivel, ejes []domain.Eje, cantidad int, modo domain.ModoEnsayo) (EnsayoDetalle, error) {
+	if prueba, _ := domain.PruebaDe(nivel); prueba.UsaEstimulos {
+		return r.generarPorEstimulos(ctx, estudianteID, nivel, ejes, cantidad, modo)
+	}
 	disp, err := r.disponibilidadPorEje(ctx, nivel, ejes)
 	if err != nil {
 		return EnsayoDetalle{}, err
@@ -136,6 +151,22 @@ func (r *Ensayos) GenerarAleatorio(ctx context.Context, estudianteID string, niv
 		seleccionados[i], seleccionados[j] = seleccionados[j], seleccionados[i]
 	})
 
+	ids := make([]string, len(seleccionados))
+	pesos := make([]int, len(seleccionados))
+	for i, s := range seleccionados {
+		ids[i], pesos[i] = s.id, s.peso
+	}
+	ensayoID, err := insertarEnsayo(ctx, tx, estudianteID, nivel, ejes, cantidad, modo, ids, pesos)
+	if err != nil {
+		return EnsayoDetalle{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return EnsayoDetalle{}, err
+	}
+	return r.ObtenerDetalle(ctx, ensayoID)
+}
+
+func insertarEnsayo(ctx context.Context, tx pgx.Tx, estudianteID string, nivel domain.Nivel, ejes []domain.Eje, cantidad int, modo domain.ModoEnsayo, ids []string, pesos []int) (string, error) {
 	ejesTexto := make([]string, len(ejes))
 	for i, e := range ejes {
 		ejesTexto[i] = string(e)
@@ -144,20 +175,121 @@ func (r *Ensayos) GenerarAleatorio(ctx context.Context, estudianteID string, niv
 	const qEnsayo = `INSERT INTO ensayos (estudiante_id, nivel, ejes, cantidad, modo, estado)
 	                  VALUES ($1,$2,$3,$4,$5,'en_progreso') RETURNING id::text`
 	if err := tx.QueryRow(ctx, qEnsayo, estudianteID, string(nivel), ejesTexto, cantidad, string(modo)).Scan(&ensayoID); err != nil {
+		return "", err
+	}
+	const qEI = `INSERT INTO ensayo_items (ensayo_id, item_id, orden, peso_snapshot) VALUES ($1,$2,$3,$4)`
+	for i := range ids {
+		if _, err := tx.Exec(ctx, qEI, ensayoID, ids[i], i+1, pesos[i]); err != nil {
+			return "", err
+		}
+	}
+	return ensayoID, nil
+}
+
+// generarPorEstimulos arma el ensayo con textos completos: cada estímulo aporta todas sus preguntas publicadas, en su
+// orden. Se eligen al azar estímulos que tengan alguna pregunta de los ejes pedidos hasta sumar exactamente `cantidad`.
+func (r *Ensayos) generarPorEstimulos(ctx context.Context, estudianteID string, nivel domain.Nivel, ejes []domain.Eje, cantidad int, modo domain.ModoEnsayo) (EnsayoDetalle, error) {
+	ejesStr := make([]string, len(ejes))
+	for i, e := range ejes {
+		ejesStr[i] = string(e)
+	}
+	const q = `SELECT i.estimulo_id::text, COUNT(*) FROM items i
+	           WHERE i.estado = 'publicado' AND i.nivel = $1 AND i.estimulo_id IS NOT NULL
+	           GROUP BY i.estimulo_id
+	           HAVING bool_or(i.eje::text = ANY($2))
+	           ORDER BY random()`
+	rows, err := r.pool.Query(ctx, q, string(nivel), ejesStr)
+	if err != nil {
 		return EnsayoDetalle{}, err
 	}
+	type grupo struct {
+		id string
+		n  int
+	}
+	var grupos []grupo
+	total := 0
+	for rows.Next() {
+		var g grupo
+		if err := rows.Scan(&g.id, &g.n); err != nil {
+			rows.Close()
+			return EnsayoDetalle{}, err
+		}
+		grupos = append(grupos, g)
+		total += g.n
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return EnsayoDetalle{}, err
+	}
+	elegidos := domain.ElegirGruposExactos(cantidad, func() []int {
+		ns := make([]int, len(grupos))
+		for i, g := range grupos {
+			ns[i] = g.n
+		}
+		return ns
+	}())
+	if elegidos == nil {
+		return EnsayoDetalle{}, &StockInsuficienteError{MaxDisponible: total, DisponiblesPorEje: map[domain.Eje]int{}}
+	}
 
-	const qEI = `INSERT INTO ensayo_items (ensayo_id, item_id, orden, peso_snapshot) VALUES ($1,$2,$3,$4)`
-	for i, s := range seleccionados {
-		if _, err := tx.Exec(ctx, qEI, ensayoID, s.id, i+1, s.peso); err != nil {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return EnsayoDetalle{}, err
+	}
+	defer tx.Rollback(ctx)
+	var ids []string
+	var pesos []int
+	for _, gi := range elegidos {
+		const qi = `SELECT id::text, peso FROM items WHERE estado = 'publicado' AND estimulo_id = $1 ORDER BY orden_estimulo, id`
+		irows, err := tx.Query(ctx, qi, grupos[gi].id)
+		if err != nil {
+			return EnsayoDetalle{}, err
+		}
+		for irows.Next() {
+			var id string
+			var peso int
+			if err := irows.Scan(&id, &peso); err != nil {
+				irows.Close()
+				return EnsayoDetalle{}, err
+			}
+			ids = append(ids, id)
+			pesos = append(pesos, peso)
+		}
+		irows.Close()
+		if err := irows.Err(); err != nil {
 			return EnsayoDetalle{}, err
 		}
 	}
-
+	ensayoID, err := insertarEnsayo(ctx, tx, estudianteID, nivel, ejes, cantidad, modo, ids, pesos)
+	if err != nil {
+		return EnsayoDetalle{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return EnsayoDetalle{}, err
 	}
 	return r.ObtenerDetalle(ctx, ensayoID)
+}
+
+// StockPublicado devuelve la cantidad de ítems publicados por prueba y eje.
+func (r *Ensayos) StockPublicado(ctx context.Context) (map[domain.Nivel]map[domain.Eje]int, error) {
+	rows, err := r.pool.Query(ctx, `SELECT nivel::text, eje::text, COUNT(*) FROM items WHERE estado = 'publicado' GROUP BY 1, 2`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[domain.Nivel]map[domain.Eje]int{}
+	for rows.Next() {
+		var n, e string
+		var c int
+		if err := rows.Scan(&n, &e, &c); err != nil {
+			return nil, err
+		}
+		if out[domain.Nivel(n)] == nil {
+			out[domain.Nivel(n)] = map[domain.Eje]int{}
+		}
+		out[domain.Nivel(n)][domain.Eje(e)] = c
+	}
+	return out, rows.Err()
 }
 
 // ObtenerBase carga solo la fila de ensayos (sin preguntas), útil para
@@ -185,6 +317,10 @@ func (r *Ensayos) ObtenerBase(ctx context.Context, id string) (domain.Ensayo, er
 	e.Ejes = make([]domain.Eje, len(ejes))
 	for i, s := range ejes {
 		e.Ejes[i] = domain.Eje(s)
+	}
+	if e.Modo == domain.ModoSimulacro {
+		limite := domain.LimiteMinutos(e.Nivel, e.Cantidad)
+		e.LimiteMinutos = &limite
 	}
 	return e, nil
 }
@@ -228,9 +364,11 @@ func (r *Ensayos) ObtenerDetalle(ctx context.Context, id string) (EnsayoDetalle,
 	}
 
 	const q = `SELECT ei.id::text, ei.orden, ei.item_id::text, i.enunciado, i.imagen_url, i.eje::text, i.explicacion,
-	                  ei.peso_snapshot, ei.respuesta_seleccionada::text, ei.es_correcta
+	                  ei.peso_snapshot, ei.respuesta_seleccionada::text, ei.es_correcta, ei.revisada,
+	                  es.id::text, es.titulo, es.texto, es.imagen_url, es.fuente
 	           FROM ensayo_items ei
 	           JOIN items i ON i.id = ei.item_id
+	           LEFT JOIN estimulos es ON es.id = i.estimulo_id
 	           WHERE ei.ensayo_id = $1
 	           ORDER BY ei.orden`
 	rows, err := r.pool.Query(ctx, q, id)
@@ -243,9 +381,19 @@ func (r *Ensayos) ObtenerDetalle(ctx context.Context, id string) (EnsayoDetalle,
 		var d EnsayoItemDetalle
 		var eje string
 		var respuesta *string
-		if err := rows.Scan(&d.EnsayoItemID, &d.Orden, &d.ItemID, &d.Enunciado, &d.ImagenURL, &eje, &d.Explicacion, &d.PesoSnapshot, &respuesta, &d.EsCorrecta); err != nil {
+		var estID, estTexto *string
+		var est Estimulo
+		if err := rows.Scan(&d.EnsayoItemID, &d.Orden, &d.ItemID, &d.Enunciado, &d.ImagenURL, &eje, &d.Explicacion, &d.PesoSnapshot, &respuesta, &d.EsCorrecta,
+			&d.Revisada, &estID, &est.Titulo, &estTexto, &est.ImagenURL, &est.Fuente); err != nil {
 			rows.Close()
 			return EnsayoDetalle{}, err
+		}
+		if estID != nil {
+			est.ID = *estID
+			if estTexto != nil {
+				est.Texto = *estTexto
+			}
+			d.Estimulo = &est
 		}
 		d.Eje = domain.Eje(eje)
 		if respuesta != nil {
@@ -303,14 +451,22 @@ func (r *Ensayos) GuardarRespuestas(ctx context.Context, ensayoID string, respue
 	}
 	defer tx.Rollback(ctx)
 
-	const q = `UPDATE ensayo_items SET respuesta_seleccionada = $1 WHERE id = $2 AND ensayo_id = $3`
+	const q = `UPDATE ensayo_items SET respuesta_seleccionada = $1 WHERE id = $2 AND ensayo_id = $3 RETURNING revisada`
+	const qRevisada = `SELECT revisada FROM ensayo_items WHERE id = $1 AND ensayo_id = $2`
 	for _, resp := range respuestas {
-		ct, err := tx.Exec(ctx, q, string(resp.Respuesta), resp.EnsayoItemID, ensayoID)
+		var revisada bool
+		err := tx.QueryRow(ctx, qRevisada, resp.EnsayoItemID, ensayoID).Scan(&revisada)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNoEncontrado
+		}
 		if err != nil {
 			return err
 		}
-		if ct.RowsAffected() == 0 {
-			return ErrNoEncontrado
+		if revisada {
+			return ErrPreguntaRevisada
+		}
+		if err := tx.QueryRow(ctx, q, string(resp.Respuesta), resp.EnsayoItemID, ensayoID).Scan(&revisada); err != nil {
+			return err
 		}
 	}
 	return tx.Commit(ctx)
@@ -515,4 +671,26 @@ func (r *Ensayos) FinalizadosPorEstudiante(ctx context.Context, estudianteID str
 		out = append(out, e)
 	}
 	return out, rows.Err()
+}
+
+// Revelar marca la pregunta como revisada (modo práctica): desde ahí su respuesta queda fija y se puede mostrar la
+// clave y la explicación antes de terminar el ensayo.
+func (r *Ensayos) Revelar(ctx context.Context, ensayoID, ensayoItemID string) (EnsayoItemDetalle, error) {
+	ct, err := r.pool.Exec(ctx, `UPDATE ensayo_items SET revisada = TRUE WHERE id = $1 AND ensayo_id = $2`, ensayoItemID, ensayoID)
+	if err != nil {
+		return EnsayoItemDetalle{}, err
+	}
+	if ct.RowsAffected() == 0 {
+		return EnsayoItemDetalle{}, ErrNoEncontrado
+	}
+	detalle, err := r.ObtenerDetalle(ctx, ensayoID)
+	if err != nil {
+		return EnsayoItemDetalle{}, err
+	}
+	for _, it := range detalle.Items {
+		if it.EnsayoItemID == ensayoItemID {
+			return it, nil
+		}
+	}
+	return EnsayoItemDetalle{}, ErrNoEncontrado
 }

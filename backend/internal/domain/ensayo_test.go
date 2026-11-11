@@ -71,3 +71,35 @@ func TestCalcularDesglosePorEje(t *testing.T) {
 		t.Fatalf("desglose algebra inesperado: %+v", out[1])
 	}
 }
+
+func TestElegirGruposExactos(t *testing.T) {
+	elegidos := ElegirGruposExactos(10, []int{6, 5, 4, 5})
+	suma := 0
+	for _, i := range elegidos {
+		suma += []int{6, 5, 4, 5}[i]
+	}
+	if suma != 10 {
+		t.Fatalf("esperaba suma 10, obtuve %d (%v)", suma, elegidos)
+	}
+	if ElegirGruposExactos(7, []int{5, 5, 4}) != nil {
+		t.Fatal("7 no se puede formar con 5, 5 y 4")
+	}
+}
+
+func TestLimiteMinutosProrrateado(t *testing.T) {
+	if got := LimiteMinutos(NivelCL, 65); got != 150 {
+		t.Fatalf("Lectora completa debería durar 150 min, obtuve %d", got)
+	}
+	if got := LimiteMinutos(NivelM1, 10); got != 22 {
+		t.Fatalf("10 preguntas de M1 deberían durar 22 min, obtuve %d", got)
+	}
+}
+
+func TestEjesValidosSegunPrueba(t *testing.T) {
+	if !EjesValidos(NivelCiencias, []Eje{EjeBiologia, EjeQuimica}) {
+		t.Fatal("biología y química son ejes de Ciencias")
+	}
+	if EjesValidos(NivelM1, []Eje{EjeBiologia}) {
+		t.Fatal("biología no es un eje de M1")
+	}
+}

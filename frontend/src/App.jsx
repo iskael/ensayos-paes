@@ -46,7 +46,7 @@ export default function App() {
         path="/ensayos/:id"
         element={
           <RutaPrivada>
-            <LayoutAutenticado>
+            <LayoutAutenticado sinNavegacion>
               <RendirEnsayo />
             </LayoutAutenticado>
           </RutaPrivada>

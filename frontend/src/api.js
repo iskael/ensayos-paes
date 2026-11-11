@@ -53,6 +53,10 @@ export const api = {
   iniciarSesion: (body) => pedir('/api/v1/auth/login', { metodo: 'POST', body }),
   verificarEmail: (token) => pedir('/api/v1/auth/verificar-email', { metodo: 'POST', body: { token } }),
   reenviarVerificacion: (email) => pedir('/api/v1/auth/reenviar-verificacion', { metodo: 'POST', body: { email } }),
+  listarPruebas: (token) => pedir('/api/v1/pruebas', { token }),
+  listarEnsayos: (token) => pedir('/api/v1/ensayos?limit=20', { token }),
+  revelarPregunta: (token, id, ensayoItemId) =>
+    pedir(`/api/v1/ensayos/${id}/items/${ensayoItemId}/revelar`, { metodo: 'POST', token }),
   crearEnsayo: (token, body) => pedir('/api/v1/ensayos', { metodo: 'POST', body, token }),
   obtenerEnsayo: (token, id) => pedir(`/api/v1/ensayos/${id}`, { token }),
   guardarRespuestas: (token, id, body, signal) =>

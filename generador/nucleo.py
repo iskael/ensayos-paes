@@ -12,7 +12,14 @@ ETIQUETAS = ["A", "B", "C", "D", "E"]
 PESO_DEFECTO = 100
 
 EJES = ("numeros", "algebra_funciones", "geometria", "probabilidad_estadistica")
-NIVELES = ("M1", "M2")
+EJES_POR_NIVEL = {
+    "M1": EJES,
+    "M2": EJES,
+    "CL": ("localizar", "interpretar", "evaluar"),
+    "CIENCIAS": ("biologia", "fisica", "quimica"),
+    "HCS": ("historia", "formacion_ciudadana", "sistema_economico"),
+}
+NIVELES = tuple(EJES_POR_NIVEL)
 DIFICULTADES = ("baja", "media", "alta")
 
 
@@ -161,10 +168,55 @@ REGISTRO: list[Plantilla] = []
 
 
 def plantilla(eje: str, nivel: str = "M1"):
+    if eje not in EJES_POR_NIVEL[nivel]:
+        raise ValueError(f"el eje {eje} no es de la prueba {nivel}")
+
     def decorar(f):
         REGISTRO.append(Plantilla(f.__name__, eje, nivel, f))
         return f
     return decorar
+
+
+@dataclass
+class Estimulo:
+    """Texto que comparten varias preguntas seguidas. `clave` lo identifica en el banco (carga idempotente)."""
+    clave: str
+    titulo: str | None
+    texto: str
+    fuente: str | None = None
+
+
+@dataclass
+class ItemFijo:
+    """Pregunta escrita a mano: la correcta y cada distractor con el error que representa."""
+    nivel: str
+    eje: str
+    dificultad: str
+    enunciado: str
+    correcta: str
+    distractores: list[tuple[str, str]]
+    pasos: str
+    estimulo: Estimulo | None = None
+    orden: int | None = None
+    figura: str | None = None
+
+
+FIJOS: list[ItemFijo] = []
+
+
+def fijo(nivel: str, eje: str, dificultad: str, enunciado: str, correcta: str, distractores: list[tuple[str, str]], pasos: str,
+         estimulo: Estimulo | None = None, orden: int | None = None, figura: str | None = None) -> ItemFijo:
+    if eje not in EJES_POR_NIVEL[nivel]:
+        raise ValueError(f"el eje {eje} no es de la prueba {nivel}")
+    it = ItemFijo(nivel, eje, dificultad, enunciado, correcta, distractores, pasos, estimulo, orden, figura)
+    FIJOS.append(it)
+    return it
+
+
+def propuesta_fija(it: ItemFijo) -> Propuesta:
+    distractores = [Opcion(t, t, e) for t, e in it.distractores]
+    return Propuesta(it.enunciado, Opcion(it.correcta, it.correcta, None), distractores, it.pasos,
+                     lambda v: v == it.correcta, it.dificultad, figura=it.figura)
 
 
 def _latex_valido(texto: str) -> bool:
@@ -200,7 +252,7 @@ def validar(p: Propuesta) -> list[str]:
     return fallas
 
 
-def armar_item(pl: Plantilla, p: Propuesta, rng: random.Random) -> dict:
+def armar_item(pl: Plantilla, p: Propuesta, rng: random.Random, estimulo: Estimulo | None = None, orden: int | None = None) -> dict:
     opciones = [p.correcta] + p.distractores
     if p.orden_fijo:
         opciones.sort(key=lambda o: o.valor)
@@ -230,4 +282,7 @@ def armar_item(pl: Plantilla, p: Propuesta, rng: random.Random) -> dict:
         "peso": PESO_DEFECTO,
         "origen": "generado",
         "estado": "borrador",
+        "estimulo": None if estimulo is None else {"clave": estimulo.clave, "titulo": estimulo.titulo, "texto": estimulo.texto,
+                                                   "fuente": estimulo.fuente},
+        "orden_estimulo": orden,
     }
