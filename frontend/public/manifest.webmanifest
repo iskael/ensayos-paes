@@ -1,0 +1,17 @@
+{
+  "name": "Ensayos PAES",
+  "short_name": "Ensayos PAES",
+  "description": "Ensayos de práctica para la PAES: Lectora, Matemática, Ciencias e Historia.",
+  "lang": "es-CL",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f4f8",
+  "theme_color": "#4f46e5",
+  "icons": [
+    { "src": "/icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
