@@ -20,6 +20,7 @@ type Deps struct {
 	Examenes       *repo.Examenes
 	Items          *repo.Items
 	Clave          *repo.Clave
+	Estimulos      *repo.Estimulos
 	Ensayos        *repo.Ensayos
 	Grupos         *repo.Grupos
 	Verificaciones *repo.Verificaciones
@@ -49,7 +50,7 @@ func New(d Deps) http.Handler {
 	}
 
 	authH := &authHandler{usuarios: d.Usuarios, jwt: d.JWT, mailer: d.Mailer, verificaciones: d.Verificaciones}
-	bancoH := &bancoHandler{examenes: d.Examenes, items: d.Items, clave: d.Clave, imagenes: d.Imagenes}
+	bancoH := &bancoHandler{examenes: d.Examenes, items: d.Items, clave: d.Clave, estimulos: d.Estimulos, imagenes: d.Imagenes}
 	ensayoH := &ensayoHandler{ensayos: d.Ensayos}
 	dashboardH := &dashboardHandler{ensayos: d.Ensayos}
 	grupoH := &grupoHandler{grupos: d.Grupos, ensayos: d.Ensayos}
@@ -94,6 +95,16 @@ func New(d Deps) http.Handler {
 						ir.Delete("/", bancoH.eliminarItem)
 						ir.Post("/publicar", bancoH.publicarItem)
 						ir.Post("/ocultar", bancoH.ocultarItem)
+					})
+				})
+
+				admin.Route("/estimulos", func(es chi.Router) {
+					es.Post("/", bancoH.crearEstimulo)
+					es.Get("/", bancoH.listarEstimulos)
+					es.Route("/{estimuloId}", func(er chi.Router) {
+						er.Get("/", bancoH.obtenerEstimulo)
+						er.Put("/", bancoH.actualizarEstimulo)
+						er.Delete("/", bancoH.eliminarEstimulo)
 					})
 				})
 

@@ -19,6 +19,7 @@ export default function BancoItems() {
   const dificultad = searchParams.get('dificultad') ?? ''
   const estado = searchParams.get('estado') ?? ''
   const examenId = searchParams.get('examenId') ?? ''
+  const estimuloId = searchParams.get('estimuloId') ?? ''
 
   const cargar = useCallback(() => {
     setError(null)
@@ -29,13 +30,14 @@ export default function BancoItems() {
         dificultad: dificultad || undefined,
         estado: estado || undefined,
         examenId: examenId || undefined,
+        estimuloId: estimuloId || undefined,
         limit: TAMANO_PAGINA,
         offset: pagina * TAMANO_PAGINA,
       }),
     )
       .then(setItems)
       .catch(() => setError('No se pudieron cargar los ítems'))
-  }, [llamar, nivel, eje, dificultad, estado, examenId, pagina])
+  }, [llamar, nivel, eje, dificultad, estado, examenId, estimuloId, pagina])
 
   useEffect(() => {
     cargar()
@@ -85,6 +87,15 @@ export default function BancoItems() {
           <p>
             Filtrando por examen.{' '}
             <button type="button" className="boton-enlace" onClick={() => actualizarFiltro('examenId', '')}>
+              Quitar filtro
+            </button>
+          </p>
+        )}
+
+        {estimuloId && (
+          <p>
+            Preguntas de un texto.{' '}
+            <button type="button" className="boton-enlace" onClick={() => actualizarFiltro('estimuloId', '')}>
               Quitar filtro
             </button>
           </p>
