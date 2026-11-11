@@ -27,14 +27,14 @@ func (r *Items) Crear(ctx context.Context, it domain.Item) (domain.Item, error) 
 	defer tx.Rollback(ctx)
 
 	// Los ítems siempre nacen en borrador (RN-04); publicar es un paso explícito.
-	const qItem = `INSERT INTO items (examen_fuente_id, enunciado, imagen_url, eje, nivel, dificultad, origen, estado, peso, explicacion)
-	               VALUES ($1,$2,$3,$4,$5,$6,$7,'borrador',$8,$9)
+	const qItem = `INSERT INTO items (examen_fuente_id, enunciado, imagen_url, eje, nivel, dificultad, origen, estado, peso, explicacion, estimulo_id, orden_estimulo)
+	               VALUES ($1,$2,$3,$4,$5,$6,$7,'borrador',$8,$9,$10,$11)
 	               RETURNING id::text`
 	origen := it.Origen
 	if origen == "" {
 		origen = domain.OrigenOficial
 	}
-	if err := tx.QueryRow(ctx, qItem, it.ExamenFuenteID, it.Enunciado, it.ImagenURL, string(it.Eje), string(it.Nivel), string(it.Dificultad), string(origen), it.Peso, it.Explicacion).Scan(&it.ID); err != nil {
+	if err := tx.QueryRow(ctx, qItem, it.ExamenFuenteID, it.Enunciado, it.ImagenURL, string(it.Eje), string(it.Nivel), string(it.Dificultad), string(origen), it.Peso, it.Explicacion, it.EstimuloID, it.OrdenEstimulo).Scan(&it.ID); err != nil {
 		return domain.Item{}, err
 	}
 	if err := insertarAlternativas(ctx, tx, it.ID, it.Alternativas); err != nil {
@@ -59,9 +59,9 @@ func insertarAlternativas(ctx context.Context, tx pgx.Tx, itemID string, alts []
 func (r *Items) PorID(ctx context.Context, id string) (domain.Item, error) {
 	var it domain.Item
 	var eje, nivel, dificultad, origen, estado string
-	const q = `SELECT id::text, examen_fuente_id::text, enunciado, imagen_url, eje::text, nivel::text, dificultad::text, origen::text, estado::text, peso, explicacion, fecha_creacion
+	const q = `SELECT id::text, examen_fuente_id::text, enunciado, imagen_url, eje::text, nivel::text, dificultad::text, origen::text, estado::text, peso, explicacion, estimulo_id::text, orden_estimulo, fecha_creacion
 	           FROM items WHERE id = $1`
-	err := r.pool.QueryRow(ctx, q, id).Scan(&it.ID, &it.ExamenFuenteID, &it.Enunciado, &it.ImagenURL, &eje, &nivel, &dificultad, &origen, &estado, &it.Peso, &it.Explicacion, &it.FechaCreacion)
+	err := r.pool.QueryRow(ctx, q, id).Scan(&it.ID, &it.ExamenFuenteID, &it.Enunciado, &it.ImagenURL, &eje, &nivel, &dificultad, &origen, &estado, &it.Peso, &it.Explicacion, &it.EstimuloID, &it.OrdenEstimulo, &it.FechaCreacion)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Item{}, ErrNoEncontrado
 	}
@@ -110,9 +110,9 @@ func (r *Items) Actualizar(ctx context.Context, id string, it domain.Item) (doma
 	}
 	defer tx.Rollback(ctx)
 
-	const q = `UPDATE items SET examen_fuente_id=$1, enunciado=$2, imagen_url=$3, eje=$4, nivel=$5, dificultad=$6, peso=$7, explicacion=$8
-	           WHERE id=$9`
-	ct, err := tx.Exec(ctx, q, it.ExamenFuenteID, it.Enunciado, it.ImagenURL, string(it.Eje), string(it.Nivel), string(it.Dificultad), it.Peso, it.Explicacion, id)
+	const q = `UPDATE items SET examen_fuente_id=$1, enunciado=$2, imagen_url=$3, eje=$4, nivel=$5, dificultad=$6, peso=$7, explicacion=$8, estimulo_id=$9, orden_estimulo=$10
+	           WHERE id=$11`
+	ct, err := tx.Exec(ctx, q, it.ExamenFuenteID, it.Enunciado, it.ImagenURL, string(it.Eje), string(it.Nivel), string(it.Dificultad), it.Peso, it.Explicacion, it.EstimuloID, it.OrdenEstimulo, id)
 	if err != nil {
 		return domain.Item{}, err
 	}
@@ -159,6 +159,7 @@ type FiltrosItems struct {
 	Dificultad *domain.Dificultad
 	Estado     *domain.EstadoItem
 	ExamenID   *string
+	EstimuloID *string
 	Limit      int
 	Offset     int
 }
@@ -190,7 +191,12 @@ func (r *Items) Listar(ctx context.Context, f FiltrosItems) ([]domain.Item, erro
 	if f.ExamenID != nil {
 		add("examen_fuente_id =", *f.ExamenID)
 	}
-	q += fmt.Sprintf(" ORDER BY fecha_creacion DESC LIMIT $%d OFFSET $%d", i, i+1)
+	orden := "fecha_creacion DESC"
+	if f.EstimuloID != nil {
+		add("estimulo_id =", *f.EstimuloID)
+		orden = "orden_estimulo NULLS LAST, fecha_creacion"
+	}
+	q += fmt.Sprintf(" ORDER BY %s LIMIT $%d OFFSET $%d", orden, i, i+1)
 	args = append(args, f.Limit, f.Offset)
 
 	rows, err := r.pool.Query(ctx, q, args...)

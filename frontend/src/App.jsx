@@ -14,6 +14,8 @@ import BancoExamenes from './pages/BancoExamenes.jsx'
 import ExamenForm from './pages/ExamenForm.jsx'
 import ItemForm from './pages/ItemForm.jsx'
 import BancoItems from './pages/BancoItems.jsx'
+import BancoEstimulos from './pages/BancoEstimulos.jsx'
+import EstimuloForm from './pages/EstimuloForm.jsx'
 import ExamenClave from './pages/ExamenClave.jsx'
 import MisGruposProfesor from './pages/MisGruposProfesor.jsx'
 import GrupoDetalle from './pages/GrupoDetalle.jsx'
@@ -119,6 +121,36 @@ export default function App() {
           <RutaPrivada>
             <LayoutAutenticado>
               <ExamenClave />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/textos"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <BancoEstimulos />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/textos/nuevo"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <EstimuloForm />
+            </LayoutAutenticado>
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/banco/textos/:id"
+        element={
+          <RutaPrivada>
+            <LayoutAutenticado>
+              <EstimuloForm />
             </LayoutAutenticado>
           </RutaPrivada>
         }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, ApiError, urlImagen } from '../api.js'
 import { useApi } from '../useApi.js'
 import { PRUEBAS, ejesDe, DIFICULTADES } from '../constantes.js'
@@ -18,6 +18,8 @@ const VACIO = {
   peso: '',
   examen_fuente_id: '',
   explicacion: '',
+  estimulo_id: '',
+  orden_estimulo: '',
   alternativas: ALTERNATIVAS_VACIAS,
 }
 
@@ -26,8 +28,15 @@ export default function ItemForm() {
   const esNuevo = id === undefined
   const navigate = useNavigate()
   const { llamar } = useApi()
-  const [form, setForm] = useState(VACIO)
+  const [searchParams] = useSearchParams()
+  const estimuloInicial = searchParams.get('estimuloId') ?? ''
+  const [form, setForm] = useState(() => {
+    const nivel = searchParams.get('nivel')
+    if (!estimuloInicial || !nivel) return VACIO
+    return { ...VACIO, nivel, eje: ejesDe(nivel)[0]?.valor ?? VACIO.eje, peso: '100', estimulo_id: estimuloInicial, orden_estimulo: searchParams.get('orden') ?? '' }
+  })
   const [examenes, setExamenes] = useState([])
+  const [estimulos, setEstimulos] = useState([])
   const [cargando, setCargando] = useState(!esNuevo)
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
@@ -46,6 +55,18 @@ export default function ItemForm() {
   }, [llamar])
 
   useEffect(() => {
+    let cancelado = false
+    llamar((token) => api.listarEstimulos(token, { nivel: form.nivel, limit: 100 }))
+      .then((lista) => {
+        if (!cancelado) setEstimulos(lista)
+      })
+      .catch(() => {})
+    return () => {
+      cancelado = true
+    }
+  }, [llamar, form.nivel])
+
+  useEffect(() => {
     if (esNuevo) return
     let cancelado = false
     llamar((token) => api.obtenerItem(token, id))
@@ -60,6 +81,8 @@ export default function ItemForm() {
           peso: it.peso ?? '',
           examen_fuente_id: it.examen_fuente_id ?? '',
           explicacion: it.explicacion ?? '',
+          estimulo_id: it.estimulo_id ?? '',
+          orden_estimulo: it.orden_estimulo ?? '',
           alternativas: it.alternativas.map((a) => ({
             etiqueta: a.etiqueta,
             texto: a.texto,
@@ -139,6 +162,8 @@ export default function ItemForm() {
       dificultad: form.dificultad,
       peso: form.peso === '' ? null : Number(form.peso),
       explicacion: form.explicacion || null,
+      estimulo_id: form.estimulo_id || null,
+      orden_estimulo: form.estimulo_id && form.orden_estimulo !== '' ? Number(form.orden_estimulo) : null,
       alternativas: form.alternativas,
     }
     try {
@@ -147,7 +172,8 @@ export default function ItemForm() {
       } else {
         await llamar((token) => api.actualizarItem(token, id, cuerpo))
       }
-      navigate('/banco/items')
+      if (window.history.state?.idx > 0) navigate(-1)
+      else navigate(form.estimulo_id ? `/banco/textos/${form.estimulo_id}` : '/banco/items')
     } catch (err) {
       setError(err instanceof ApiError ? err.mensaje || 'No se pudo guardar el ítem' : 'No se pudo conectar con el servidor')
     } finally {
@@ -230,6 +256,32 @@ export default function ItemForm() {
             <label htmlFor="peso">Peso (requerido para publicar)</label>
             <input id="peso" type="number" min="0" value={form.peso} onChange={(e) => actualizarCampo('peso', e.target.value)} />
           </div>
+          <div className="campo">
+            <label htmlFor="estimulo">Texto asociado (opcional)</label>
+            <select id="estimulo" value={form.estimulo_id} onChange={(e) => actualizarCampo('estimulo_id', e.target.value)}>
+              <option value="">(ninguno)</option>
+              {form.estimulo_id && !estimulos.some((x) => x.id === form.estimulo_id) && (
+                <option value={form.estimulo_id}>Texto actual</option>
+              )}
+              {estimulos.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.titulo ?? x.texto.slice(0, 50)}
+                </option>
+              ))}
+            </select>
+          </div>
+          {form.estimulo_id && (
+            <div className="campo">
+              <label htmlFor="orden">Orden dentro del texto</label>
+              <input
+                id="orden"
+                type="number"
+                min="1"
+                value={form.orden_estimulo}
+                onChange={(e) => actualizarCampo('orden_estimulo', e.target.value)}
+              />
+            </div>
+          )}
           <div className="campo">
             <label htmlFor="examen">Examen fuente (opcional)</label>
             <select

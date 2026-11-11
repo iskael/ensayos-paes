@@ -72,6 +72,7 @@ export const MENU_POR_ROL = {
   profesor: [{ etiqueta: 'Grupos', ruta: '/grupos', icono: 'grupos', disponible: true }],
   admin: [
     { etiqueta: 'Preguntas', ruta: '/banco/items', icono: 'banco', disponible: true },
+    { etiqueta: 'Textos', ruta: '/banco/textos', icono: 'texto', disponible: true },
     { etiqueta: 'Exámenes', ruta: '/banco/examenes', icono: 'examenes', disponible: true },
   ],
 }

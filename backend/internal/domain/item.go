@@ -25,6 +25,8 @@ type Item struct {
 	Estado         EstadoItem    `json:"estado"`
 	Peso           *int          `json:"peso,omitempty"`
 	Explicacion    *string       `json:"explicacion,omitempty"`
+	EstimuloID     *string       `json:"estimulo_id,omitempty"`
+	OrdenEstimulo  *int          `json:"orden_estimulo,omitempty"`
 	Alternativas   []Alternativa `json:"alternativas"`
 	FechaCreacion  time.Time     `json:"fecha_creacion"`
 }

@@ -102,12 +102,13 @@ def a_sql(items: list[dict]) -> str:
     estimulos = {}
     for it in items:
         if it["estimulo"]:
-            estimulos[it["estimulo"]["clave"]] = it["estimulo"]
-    for e in estimulos.values():
+            estimulos[it["estimulo"]["clave"]] = (it["estimulo"], it["nivel"])
+    for e, nivel in estimulos.values():
         titulo = _sql(e["titulo"]) if e["titulo"] else "NULL"
         fuente = _sql(e["fuente"]) if e["fuente"] else "NULL"
-        lineas.append(f"INSERT INTO estimulos (clave, titulo, texto, fuente) VALUES ({_sql(e['clave'])}, {titulo}, {_sql(e['texto'])}, {fuente}) "
-                      "ON CONFLICT (clave) DO UPDATE SET titulo = EXCLUDED.titulo, texto = EXCLUDED.texto, fuente = EXCLUDED.fuente;")
+        lineas.append(f"INSERT INTO estimulos (clave, titulo, texto, fuente, nivel) VALUES ({_sql(e['clave'])}, {titulo}, {_sql(e['texto'])}, {fuente}, {_sql(nivel)}) "
+                      "ON CONFLICT (clave) DO UPDATE SET titulo = EXCLUDED.titulo, texto = EXCLUDED.texto, fuente = EXCLUDED.fuente, nivel = EXCLUDED.nivel "
+                      "WHERE estimulos.fecha_edicion IS NULL;")
     for it in items:
         alternativas = ", ".join(
             f"({_sql(a['etiqueta'])}, {_sql(a['texto'])}, {'TRUE' if a['es_correcta'] else 'FALSE'})"

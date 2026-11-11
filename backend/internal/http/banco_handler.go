@@ -15,10 +15,11 @@ import (
 )
 
 type bancoHandler struct {
-	examenes *repo.Examenes
-	items    *repo.Items
-	clave    *repo.Clave
-	imagenes *storage.Imagenes
+	examenes  *repo.Examenes
+	items     *repo.Items
+	clave     *repo.Clave
+	estimulos *repo.Estimulos
+	imagenes  *storage.Imagenes
 }
 
 func paginacion(r *http.Request) (int, int) {
@@ -244,6 +245,8 @@ type itemInput struct {
 	Dificultad     string             `json:"dificultad"`
 	Peso           *int               `json:"peso"`
 	Explicacion    *string            `json:"explicacion"`
+	EstimuloID     *string            `json:"estimulo_id"`
+	OrdenEstimulo  *int               `json:"orden_estimulo"`
 	Alternativas   []alternativaInput `json:"alternativas"`
 }
 
@@ -275,6 +278,8 @@ func (in itemInput) aDominio() (domain.Item, error) {
 		Dificultad:     dificultad,
 		Peso:           in.Peso,
 		Explicacion:    in.Explicacion,
+		EstimuloID:     vacioANil(in.EstimuloID),
+		OrdenEstimulo:  in.OrdenEstimulo,
 		Alternativas:   alts,
 	}, nil
 }
@@ -287,6 +292,9 @@ func (h *bancoHandler) crearItem(w http.ResponseWriter, r *http.Request) {
 	it, err := in.aDominio()
 	if err != nil {
 		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", err.Error())
+		return
+	}
+	if !h.validarEstimuloDeItem(w, r, it) {
 		return
 	}
 	it.Origen = domain.OrigenOficial
@@ -321,6 +329,9 @@ func (h *bancoHandler) listarItems(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("examenId"); v != "" {
 		f.ExamenID = &v
 	}
+	if v := q.Get("estimuloId"); v != "" {
+		f.EstimuloID = &v
+	}
 	lista, err := h.items.Listar(r.Context(), f)
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo listar ítems")
@@ -350,6 +361,9 @@ func (h *bancoHandler) actualizarItem(w http.ResponseWriter, r *http.Request) {
 	it, err := in.aDominio()
 	if err != nil {
 		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", err.Error())
+		return
+	}
+	if !h.validarEstimuloDeItem(w, r, it) {
 		return
 	}
 	actualizado, err := h.items.Actualizar(r.Context(), chi.URLParam(r, "itemId"), it)

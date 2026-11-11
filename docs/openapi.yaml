@@ -557,6 +557,10 @@ paths:
         - name: examenId
           in: query
           schema: { type: string, format: uuid }
+        - name: estimuloId
+          in: query
+          description: 'solo las preguntas de ese texto, ordenadas por orden_estimulo'
+          schema: { type: string, format: uuid }
       responses:
         '200':
           description: Lista de ítems
@@ -651,6 +655,95 @@ paths:
         '401': { $ref: '#/components/responses/NoAutorizado' }
         '403': { $ref: '#/components/responses/Prohibido' }
         '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /estimulos:
+    post:
+      tags: [Banco]
+      operationId: crearEstimulo
+      summary: Crear un texto compartido (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EstimuloInput' }
+      responses:
+        '201':
+          description: Texto creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstimuloBanco' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '422': { $ref: '#/components/responses/ValidacionFallida' }
+    get:
+      tags: [Banco]
+      operationId: listarEstimulos
+      summary: Listar textos compartidos (admin)
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - name: nivel
+          in: query
+          schema: { $ref: '#/components/schemas/Nivel' }
+        - name: buscar
+          in: query
+          description: busca en título y texto (sin distinguir mayúsculas)
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista de textos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EstimuloBanco' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+
+  /estimulos/{estimuloId}:
+    parameters:
+      - name: estimuloId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Banco]
+      operationId: obtenerEstimulo
+      summary: Obtener un texto compartido (admin)
+      responses:
+        '200':
+          description: Texto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstimuloBanco' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Banco]
+      operationId: actualizarEstimulo
+      summary: Editar un texto compartido (admin)
+      description: El cambio se ve en todas sus preguntas. No se puede cambiar la prueba si ya tiene preguntas (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EstimuloInput' }
+      responses:
+        '200':
+          description: Texto actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstimuloBanco' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+        '422': { $ref: '#/components/responses/ValidacionFallida' }
+    delete:
+      tags: [Banco]
+      operationId: eliminarEstimulo
+      summary: Eliminar un texto sin preguntas (admin)
+      responses:
+        '204': { description: Eliminado }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
 
   /imagenes:
     post:
@@ -1101,6 +1194,8 @@ components:
         dificultad: { $ref: '#/components/schemas/Dificultad' }
         peso: { type: integer, minimum: 0, nullable: true }
         explicacion: { type: string, nullable: true }
+        estimulo_id: { type: string, format: uuid, nullable: true, description: 'texto compartido; la pregunta debe ser de la misma prueba que el texto' }
+        orden_estimulo: { type: integer, minimum: 1, nullable: true, description: 'posición de la pregunta dentro del texto; solo con estimulo_id' }
         alternativas:
           type: array
           minItems: 4
@@ -1121,10 +1216,35 @@ components:
         estado: { $ref: '#/components/schemas/EstadoItem' }
         peso: { type: integer, nullable: true }
         explicacion: { type: string, nullable: true }
+        estimulo_id: { type: string, format: uuid, nullable: true }
+        orden_estimulo: { type: integer, nullable: true }
         alternativas:
           type: array
           items: { $ref: '#/components/schemas/Alternativa' }
         fecha_creacion: { type: string, format: date-time }
+    EstimuloInput:
+      type: object
+      required: [texto]
+      properties:
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        titulo: { type: string, nullable: true }
+        texto: { type: string, description: 'párrafos separados por línea en blanco; un salto simple se mantiene (versos)' }
+        imagen_url: { type: string, nullable: true }
+        fuente: { type: string, nullable: true }
+    EstimuloBanco:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clave: { type: string, nullable: true, description: 'clave del generador; null si se creó en la app' }
+        nivel: { $ref: '#/components/schemas/Nivel' }
+        titulo: { type: string, nullable: true }
+        texto: { type: string }
+        imagen_url: { type: string, nullable: true }
+        fuente: { type: string, nullable: true }
+        cantidad_items: { type: integer }
+        cantidad_publicados: { type: integer }
+        fecha_creacion: { type: string, format: date-time }
+        fecha_edicion: { type: string, format: date-time, nullable: true, description: 'si no es null, el generador ya no sobrescribe el texto' }
 
     # ---- Ensayos ----
     CrearEnsayoRequest:

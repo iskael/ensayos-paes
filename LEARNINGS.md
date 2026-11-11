@@ -149,3 +149,8 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 - **Marcar y tachar** se guardan solo en el navegador (localStorage por ensayo): no afectan el puntaje y no justifican tocar el contrato.
 - **Contenido escrito a mano** (`generador/contenido/`): Ciencias conceptual, 13 textos de Lectora y Historia. Se publica sin revisión docente por decisión del usuario (no hay profesores). Las fuentes citadas en Historia son fragmentos elaborados para la pregunta y lo dicen; no se presentan como documentos reales.
 - **Entorno de prueba**: `/opt/staging` en el CT 118 (puertos 81, 8081 y 5433, proyecto compose `staging`) con una copia de la base de producción; las capturas de iPhone y iPad se toman con Playwright y el Chromium del sistema.
+
+## Textos compartidos editables (2026-11-11)
+
+- Los estímulos se editan en el banco (`/banco/textos`). Al guardar se marca `fecha_edicion`, y el SQL del generador hace `ON CONFLICT ... WHERE estimulos.fecha_edicion IS NULL`: una vez que alguien corrige un texto en la app, recargar `carga.sql` ya no lo pisa. Si hace falta que el generador vuelva a mandar, poner `fecha_edicion = NULL` en ese texto.
+- No se puede cambiar la prueba de un texto con preguntas ni borrarlo mientras tenga preguntas (409); una pregunta solo se asocia a un texto de su misma prueba.

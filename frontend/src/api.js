@@ -90,6 +90,16 @@ export const api = {
     const qs = params.toString()
     return pedir(`/api/v1/items${qs ? `?${qs}` : ''}`, { token })
   },
+  listarEstimulos: (token, filtros = {}) => {
+    const params = new URLSearchParams()
+    Object.entries(filtros).forEach(([k, v]) => v !== undefined && v !== '' && params.set(k, v))
+    const qs = params.toString()
+    return pedir(`/api/v1/estimulos${qs ? `?${qs}` : ''}`, { token })
+  },
+  obtenerEstimulo: (token, id) => pedir(`/api/v1/estimulos/${id}`, { token }),
+  crearEstimulo: (token, body) => pedir('/api/v1/estimulos', { metodo: 'POST', body, token }),
+  actualizarEstimulo: (token, id, body) => pedir(`/api/v1/estimulos/${id}`, { metodo: 'PUT', body, token }),
+  eliminarEstimulo: (token, id) => pedir(`/api/v1/estimulos/${id}`, { metodo: 'DELETE', token }),
   obtenerItem: (token, id) => pedir(`/api/v1/items/${id}`, { token }),
   actualizarItem: (token, id, body) => pedir(`/api/v1/items/${id}`, { metodo: 'PUT', body, token }),
   eliminarItem: (token, id) => pedir(`/api/v1/items/${id}`, { metodo: 'DELETE', token }),
