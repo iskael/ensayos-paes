@@ -1,9 +1,9 @@
 # Generador de ítems (v2, Modo A)
 
 Genera ítems PAES de matemáticas por **plantillas parametrizadas**: la respuesta correcta y los
-distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 134
-plantillas: 94 de M1 (19 de números, 19 de álgebra y funciones, 34 de geometría y 22 de
-probabilidad y estadística) y 40 de M2 (10 por eje); 42 de ellas llevan figura. Reemplaza al
+distractores se calculan por código, y cada distractor corresponde a un error típico. Tiene 139
+plantillas: 99 de M1 (24 de números, 19 de álgebra y funciones, 34 de geometría y 22 de
+probabilidad y estadística) y 40 de M2 (10 por eje); 47 de ellas llevan figura. Reemplaza al
 `prototipo-ia/` (4 plantillas) como fuente de ítems `generado`. Diseño: `docs/diseno_generacion_ia_v2.md`.
 
 ## Uso
@@ -98,6 +98,14 @@ de un porcentaje, descuentos sucesivos como expresión, fracción de lo que falt
 conversiones, paso erróneo en operaciones combinadas; reducción con paréntesis, factor que falta,
 expresiones de dinero y de perímetro, funciones que modelan un estanque o un costo rebajado,
 desigualdades de meta y de suscripción, y simetría de la parábola (con figura).
+
+`plantillas_numeros_figuras.py` agrega 5 plantillas de números con figura (PAES M1 2023–2026): punto en la recta
+numérica, parte sombreada de un rectángulo, compra desde una tabla de precios, variación porcentual desde un gráfico de
+barras y diferencia de temperaturas desde una tabla.
+
+`figuras_prototipo.py` agrega figura a los 12 ítems publicados de área de triángulo del prototipo: lee
+`salida/triangulos.txt` (enunciados exportados del banco) y escribe `salida/figuras_prototipo.sql` y las imágenes en
+`salida/figuras_prototipo/`. Aplicado en producción el 2026-11-11.
 
 ## Probabilidad y estadística modeladas en PAES oficiales
 

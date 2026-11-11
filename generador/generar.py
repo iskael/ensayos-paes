@@ -19,6 +19,7 @@ import plantillas_algebra_paes  # noqa: F401
 import plantillas_probabilidad_paes  # noqa: F401
 import plantillas_m2  # noqa: F401
 import plantillas_m2_paes  # noqa: F401
+import plantillas_numeros_figuras  # noqa: F401
 import plantillas_probabilidad  # noqa: F401
 from nucleo import REGISTRO, Descartar, armar_item, validar
 
