@@ -67,7 +67,7 @@ func (h *authHandler) registrar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rol := domain.Rol(req.Rol)
-	if rol != domain.RolEstudiante && rol != domain.RolProfesor {
+	if !rol.RegistrablePorSiMismo() {
 		escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "Rol inválido para registro")
 		return
 	}

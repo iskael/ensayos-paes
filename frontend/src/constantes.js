@@ -74,11 +74,24 @@ export const MENU_POR_ROL = {
     { etiqueta: 'Preguntas', ruta: '/banco/items', icono: 'banco', disponible: true },
     { etiqueta: 'Textos', ruta: '/banco/textos', icono: 'texto', disponible: true },
     { etiqueta: 'Exámenes', ruta: '/banco/examenes', icono: 'examenes', disponible: true },
+    { etiqueta: 'Usuarios', ruta: '/admin/usuarios', icono: 'grupos', disponible: true },
   ],
+  editor: [
+    { etiqueta: 'Preguntas', ruta: '/banco/items', icono: 'banco', disponible: true },
+    { etiqueta: 'Textos', ruta: '/banco/textos', icono: 'texto', disponible: true },
+    { etiqueta: 'Exámenes', ruta: '/banco/examenes', icono: 'examenes', disponible: true },
+  ],
+  apoderado: [{ etiqueta: 'Estudiantes', ruta: '/pupilos', icono: 'progreso', disponible: true }],
+  institucion: [{ etiqueta: 'Institución', ruta: '/institucion', icono: 'grupos', disponible: true }],
 }
 
 export const ETIQUETA_ROL = {
   estudiante: 'Estudiante',
   profesor: 'Profesor',
   admin: 'Admin',
+  editor: 'Editor',
+  apoderado: 'Apoderado',
+  institucion: 'Institución',
 }
+
+export const ROLES_ASIGNABLES = ['estudiante', 'profesor', 'apoderado', 'institucion', 'editor']

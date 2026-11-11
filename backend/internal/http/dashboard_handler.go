@@ -38,10 +38,14 @@ func (h *dashboardHandler) finalizadosEnPrueba(r *http.Request, usuarioID string
 
 func (h *dashboardHandler) resumen(w http.ResponseWriter, r *http.Request) {
 	claims, _ := claimsDe(r.Context())
+	h.resumenDe(w, r, claims.UsuarioID)
+}
+
+func (h *dashboardHandler) resumenDe(w http.ResponseWriter, r *http.Request, estudianteID string) {
 
 	// FinalizadosPorEstudiante viene ordenado por fecha_fin ASC: el último
 	// elemento es el más reciente (ultimo_puntaje) sin necesidad de otra consulta.
-	finalizados, nivel, err := h.finalizadosEnPrueba(r, claims.UsuarioID)
+	finalizados, nivel, err := h.finalizadosEnPrueba(r, estudianteID)
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo calcular el resumen")
 		return
@@ -65,7 +69,7 @@ func (h *dashboardHandler) resumen(w http.ResponseWriter, r *http.Request) {
 		resp.PromedioPuntaje = &promedio
 	}
 
-	items, err := h.ensayos.DesempenoPorEjeEnPrueba(r.Context(), []string{claims.UsuarioID}, nivel)
+	items, err := h.ensayos.DesempenoPorEjeEnPrueba(r.Context(), []string{estudianteID}, nivel)
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo calcular el desempeño por eje")
 		return
@@ -87,7 +91,11 @@ type puntoEvolucionResp struct {
 
 func (h *dashboardHandler) evolucion(w http.ResponseWriter, r *http.Request) {
 	claims, _ := claimsDe(r.Context())
-	finalizados, _, err := h.finalizadosEnPrueba(r, claims.UsuarioID)
+	h.evolucionDe(w, r, claims.UsuarioID)
+}
+
+func (h *dashboardHandler) evolucionDe(w http.ResponseWriter, r *http.Request, estudianteID string) {
+	finalizados, _, err := h.finalizadosEnPrueba(r, estudianteID)
 	if err != nil {
 		escribirError(w, http.StatusInternalServerError, "INTERNO", "No se pudo obtener la evolución")
 		return

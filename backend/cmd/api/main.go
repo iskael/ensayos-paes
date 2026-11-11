@@ -53,6 +53,8 @@ func main() {
 		Examenes:       repo.NewExamenes(pool),
 		Items:          repo.NewItems(pool),
 		Estimulos:      repo.NewEstimulos(pool),
+		Vinculos:       repo.NewVinculos(pool),
+		Instituciones:  repo.NewInstituciones(pool),
 		Clave:          repo.NewClave(pool),
 		Ensayos:        repo.NewEnsayos(pool),
 		Grupos:         repo.NewGrupos(pool),

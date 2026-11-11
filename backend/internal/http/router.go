@@ -23,6 +23,8 @@ type Deps struct {
 	Estimulos      *repo.Estimulos
 	Ensayos        *repo.Ensayos
 	Grupos         *repo.Grupos
+	Vinculos       *repo.Vinculos
+	Instituciones  *repo.Instituciones
 	Verificaciones *repo.Verificaciones
 	Imagenes       *storage.Imagenes
 	Mailer         *mailer.Mailer
@@ -54,6 +56,9 @@ func New(d Deps) http.Handler {
 	ensayoH := &ensayoHandler{ensayos: d.Ensayos}
 	dashboardH := &dashboardHandler{ensayos: d.Ensayos}
 	grupoH := &grupoHandler{grupos: d.Grupos, ensayos: d.Ensayos}
+	apoderadoH := &apoderadoHandler{vinculos: d.Vinculos, ensayos: d.Ensayos, dashboard: dashboardH}
+	institucionH := &institucionHandler{instituciones: d.Instituciones, grupos: grupoH}
+	usuariosH := &usuariosAdminHandler{usuarios: d.Usuarios}
 	limitadorLogin := nuevoLimitadorTasa(10, time.Minute)
 	limitadorReenvio := nuevoLimitadorTasa(5, time.Minute)
 
@@ -71,7 +76,7 @@ func New(d Deps) http.Handler {
 			priv.Get("/pruebas", ensayoH.pruebas)
 
 			priv.Group(func(admin chi.Router) {
-				admin.Use(RequerirRol(domain.RolAdmin))
+				admin.Use(RequerirRol(domain.RolAdmin, domain.RolEditor))
 
 				admin.Route("/examenes", func(e chi.Router) {
 					e.Post("/", bancoH.crearExamen)
@@ -109,7 +114,49 @@ func New(d Deps) http.Handler {
 				})
 
 				admin.Post("/imagenes", bancoH.subirImagen)
+			})
+
+			priv.Group(func(admin chi.Router) {
+				admin.Use(RequerirRol(domain.RolAdmin))
 				admin.Post("/usuarios/{usuarioId}/verificar-email", authH.verificarEmailAdmin)
+				admin.Get("/admin/usuarios", usuariosH.listar)
+				admin.Patch("/admin/usuarios/{usuarioId}/rol", usuariosH.cambiarRol)
+			})
+
+			priv.Route("/apoderados", func(ap chi.Router) {
+				ap.Use(RequerirRol(domain.RolEstudiante))
+				ap.Get("/", apoderadoH.misApoderados)
+				ap.Get("/codigo", apoderadoH.codigo)
+				ap.Post("/codigo", apoderadoH.nuevoCodigo)
+				ap.Delete("/{apoderadoId}", apoderadoH.quitarApoderado)
+			})
+
+			priv.Route("/pupilos", func(pu chi.Router) {
+				pu.Use(RequerirRol(domain.RolApoderado))
+				pu.Get("/", apoderadoH.pupilos)
+				pu.Post("/", apoderadoH.vincular)
+				pu.Route("/{estudianteId}", func(pe chi.Router) {
+					pe.Delete("/", apoderadoH.desvincular)
+					pe.Get("/resumen", apoderadoH.resumenPupilo)
+					pe.Get("/evolucion", apoderadoH.evolucionPupilo)
+				})
+			})
+
+			priv.Route("/institucion", func(in chi.Router) {
+				in.Use(RequerirRol(domain.RolInstitucion))
+				in.Get("/", institucionH.obtener)
+				in.Post("/", institucionH.crear)
+				in.Put("/", institucionH.renombrar)
+				in.Post("/codigo", institucionH.nuevoCodigo)
+				in.Delete("/profesores/{profesorId}", institucionH.quitarProfesor)
+				in.Get("/grupos/{grupoId}", institucionH.grupo)
+			})
+
+			priv.Route("/instituciones/mia", func(in chi.Router) {
+				in.Use(RequerirRol(domain.RolProfesor))
+				in.Get("/", institucionH.deProfesor)
+				in.Post("/", institucionH.unirseProfesor)
+				in.Delete("/", institucionH.salirProfesor)
 			})
 
 			priv.Group(func(est chi.Router) {

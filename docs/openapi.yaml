@@ -23,6 +23,12 @@ tags:
     description: Administración del banco de preguntas (rol admin).
   - name: Grupos
     description: Grupos y seguimiento docente (rol profesor; unión por código para estudiante).
+  - name: Apoderados
+    description: El estudiante comparte un código; el apoderado ve su progreso (no sus respuestas).
+  - name: Instituciones
+    description: El responsable crea la institución; los profesores se unen con un código y él ve sus grupos.
+  - name: Usuarios
+    description: Gestión de roles (rol admin).
 
 security:
   - bearerAuth: []
@@ -791,6 +797,333 @@ paths:
         '403': { $ref: '#/components/responses/Prohibido' }
         '404': { $ref: '#/components/responses/NoEncontrado' }
 
+  # ---------------- Apoderados ----------------
+  /apoderados:
+    get:
+      tags: [Apoderados]
+      operationId: misApoderados
+      summary: Apoderados vinculados al estudiante
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PersonaVinculada' } }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /apoderados/codigo:
+    get:
+      tags: [Apoderados]
+      operationId: codigoApoderado
+      summary: Código vigente para el apoderado (lo crea si no hay; dura 7 días)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodigoApoderado' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    post:
+      tags: [Apoderados]
+      operationId: nuevoCodigoApoderado
+      summary: Genera otro código (el anterior deja de servir)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodigoApoderado' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /apoderados/{apoderadoId}:
+    parameters:
+      - { name: apoderadoId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [Apoderados]
+      operationId: quitarApoderado
+      summary: El estudiante quita a un apoderado
+      responses:
+        '204': { description: Hecho }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /pupilos:
+    get:
+      tags: [Apoderados]
+      operationId: listarPupilos
+      summary: Estudiantes que sigue el apoderado, con resumen
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Pupilo' } }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    post:
+      tags: [Apoderados]
+      operationId: vincularPupilo
+      summary: Vincular con el código del estudiante (idempotente)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CodigoRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonaVinculada' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /pupilos/{estudianteId}:
+    parameters:
+      - { name: estudianteId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [Apoderados]
+      operationId: desvincularPupilo
+      summary: Dejar de seguir al estudiante
+      responses:
+        '204': { description: Hecho }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /pupilos/{estudianteId}/resumen:
+    parameters:
+      - { name: estudianteId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Apoderados]
+      operationId: pupiloResumen
+      summary: Mismo resumen que /dashboard/resumen, del estudiante vinculado (404 si no lo está)
+      parameters:
+        - name: nivel
+          in: query
+          schema: { $ref: '#/components/schemas/Nivel' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardResumen' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /pupilos/{estudianteId}/evolucion:
+    parameters:
+      - { name: estudianteId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Apoderados]
+      operationId: pupiloEvolucion
+      summary: Misma evolución que /dashboard/evolucion, del estudiante vinculado
+      parameters:
+        - name: nivel
+          in: query
+          schema: { $ref: '#/components/schemas/Nivel' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PuntoEvolucion' } }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  # ---------------- Instituciones ----------------
+  /institucion:
+    get:
+      tags: [Instituciones]
+      operationId: miInstitucion
+      summary: Panel del responsable con profesores y grupos (404 si aún no la crea)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PanelInstitucion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    post:
+      tags: [Instituciones]
+      operationId: crearInstitucion
+      summary: Crear la institución (una por responsable; 409 si ya existe)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NombreRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Institucion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Instituciones]
+      operationId: renombrarInstitucion
+      summary: Renombrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NombreRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Institucion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /institucion/codigo:
+    post:
+      tags: [Instituciones]
+      operationId: nuevoCodigoInstitucion
+      summary: Genera otro código para profesores
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Institucion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /institucion/profesores/{profesorId}:
+    parameters:
+      - { name: profesorId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [Instituciones]
+      operationId: quitarProfesorInstitucion
+      summary: Quitar a un profesor de la institución
+      responses:
+        '204': { description: Hecho }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /institucion/grupos/{grupoId}:
+    parameters:
+      - { $ref: '#/components/parameters/GrupoId' }
+    get:
+      tags: [Instituciones]
+      operationId: grupoInstitucion
+      summary: Grupo de un profesor de la institución con el resumen de sus miembros
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrupoInstitucionDetalle' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /instituciones/mia:
+    get:
+      tags: [Instituciones]
+      operationId: institucionDelProfesor
+      summary: Institución del profesor (sin el código)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Institucion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    post:
+      tags: [Instituciones]
+      operationId: unirseInstitucion
+      summary: El profesor se une con el código
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CodigoRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Institucion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    delete:
+      tags: [Instituciones]
+      operationId: salirInstitucion
+      summary: El profesor sale de su institución
+      responses:
+        '204': { description: Hecho }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  # ---------------- Usuarios (admin) ----------------
+  /admin/usuarios:
+    get:
+      tags: [Usuarios]
+      operationId: listarUsuarios
+      summary: Listar usuarios (busca en nombre y email)
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - { name: buscar, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Usuario' } }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /admin/usuarios/{usuarioId}/rol:
+    parameters:
+      - { $ref: '#/components/parameters/UsuarioId' }
+    patch:
+      tags: [Usuarios]
+      operationId: cambiarRol
+      summary: Cambiar el rol de una cuenta
+      description: No se puede asignar admin, cambiar el propio rol ni tocar a un admin (404). El usuario ve el cambio al volver a iniciar sesión.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CambiarRolRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '403': { $ref: '#/components/responses/Prohibido' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
   # ---------------- Grupos ----------------
   /grupos:
     post:
@@ -994,7 +1327,8 @@ components:
     # ---- Enums ----
     Rol:
       type: string
-      enum: [estudiante, profesor, admin]
+      enum: [estudiante, profesor, admin, apoderado, institucion, editor]
+      description: 'editor = banco sin gestión de usuarios; apoderado = sigue a estudiantes vinculados; institucion = agrupa profesores'
     Nivel:
       type: string
       description: 'La prueba PAES: CL (Competencia Lectora), M1, M2, CIENCIAS, HCS (Historia y Ciencias Sociales)'
@@ -1073,7 +1407,8 @@ components:
         password: { type: string, format: password, minLength: 8 }
         rol:
           type: string
-          enum: [estudiante, profesor]
+          enum: [estudiante, profesor, apoderado, institucion]
+          description: 'admin y editor no se registran: editor lo asigna un admin'
         acepta_terminos:
           type: boolean
           description: >
@@ -1222,6 +1557,98 @@ components:
           type: array
           items: { $ref: '#/components/schemas/Alternativa' }
         fecha_creacion: { type: string, format: date-time }
+    CodigoRequest:
+      type: object
+      required: [codigo]
+      properties:
+        codigo: { type: string, description: 'sin distinguir mayúsculas' }
+    NombreRequest:
+      type: object
+      required: [nombre]
+      properties:
+        nombre: { type: string, maxLength: 120 }
+    CambiarRolRequest:
+      type: object
+      required: [rol]
+      properties:
+        rol: { type: string, enum: [estudiante, profesor, apoderado, institucion, editor] }
+    CodigoApoderado:
+      type: object
+      properties:
+        codigo: { type: string }
+        expira_en: { type: string, format: date-time }
+    PersonaVinculada:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        email: { type: string, description: 'solo en la lista que ve el estudiante' }
+        fecha_vinculo: { type: string, format: date-time }
+    Pupilo:
+      allOf:
+        - { $ref: '#/components/schemas/PersonaVinculada' }
+        - type: object
+          properties:
+            total_ensayos: { type: integer }
+            ultimo_puntaje: { type: integer, nullable: true }
+    DashboardResumen:
+      type: object
+      properties:
+        total_ensayos: { type: integer }
+        ultimo_puntaje: { type: integer, nullable: true }
+        promedio_puntaje: { type: number, nullable: true }
+        mejor_puntaje: { type: integer, nullable: true }
+        desempeno_por_eje: { type: array, items: { type: object } }
+    PuntoEvolucion:
+      type: object
+      properties:
+        fecha: { type: string, format: date-time }
+        puntaje: { type: integer }
+    Institucion:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        codigo_invitacion: { type: string, description: 'solo lo ve el responsable' }
+        fecha_creacion: { type: string, format: date-time }
+    PanelInstitucion:
+      type: object
+      properties:
+        institucion: { $ref: '#/components/schemas/Institucion' }
+        profesores:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              nombre: { type: string }
+              email: { type: string }
+              grupos: { type: integer }
+              estudiantes: { type: integer }
+        grupos:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              nombre: { type: string }
+              profesor_nombre: { type: string }
+              miembros: { type: integer }
+    GrupoInstitucionDetalle:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        miembros:
+          type: array
+          items:
+            type: object
+            properties:
+              estudiante_id: { type: string, format: uuid }
+              nombre: { type: string }
+              fecha_union: { type: string, format: date-time }
+              total_ensayos: { type: integer }
+              ultimo_puntaje: { type: integer, nullable: true }
     EstimuloInput:
       type: object
       required: [texto]

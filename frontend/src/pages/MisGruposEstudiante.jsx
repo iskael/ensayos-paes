@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api, ApiError } from '../api.js'
 import { useApi } from '../useApi.js'
+import TarjetaApoderados from '../components/TarjetaApoderados.jsx'
 
 export default function MisGruposEstudiante() {
   const { llamar } = useApi()
@@ -99,6 +100,7 @@ export default function MisGruposEstudiante() {
           </ul>
         )}
       </div>
+      <TarjetaApoderados />
     </div>
   )
 }

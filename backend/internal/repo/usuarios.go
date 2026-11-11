@@ -107,3 +107,42 @@ func (r *Usuarios) MarcarVerificado(ctx context.Context, id string) (domain.Usua
 	u.Rol = domain.Rol(rol)
 	return u, nil
 }
+
+func (r *Usuarios) Listar(ctx context.Context, buscar string, limit, offset int) ([]domain.Usuario, error) {
+	const q = `SELECT id::text, nombre, email, rol::text, email_verificado, fecha_creacion FROM usuarios
+	           WHERE $1 = '' OR nombre ILIKE '%' || $1 || '%' OR email ILIKE '%' || $1 || '%'
+	           ORDER BY fecha_creacion DESC LIMIT $2 OFFSET $3`
+	rows, err := r.pool.Query(ctx, q, buscar, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []domain.Usuario{}
+	for rows.Next() {
+		var u domain.Usuario
+		var rol string
+		if err := rows.Scan(&u.ID, &u.Nombre, &u.Email, &rol, &u.EmailVerificado, &u.FechaCreacion); err != nil {
+			return nil, err
+		}
+		u.Rol = domain.Rol(rol)
+		out = append(out, u)
+	}
+	return out, rows.Err()
+}
+
+// CambiarRol no toca a los admin: esas cuentas se administran con seed-admin.
+func (r *Usuarios) CambiarRol(ctx context.Context, id string, rol domain.Rol) (domain.Usuario, error) {
+	const q = `UPDATE usuarios SET rol = $1 WHERE id = $2 AND rol <> 'admin'
+	           RETURNING id::text, nombre, email, rol::text, email_verificado, fecha_creacion`
+	var u domain.Usuario
+	var rolTexto string
+	err := r.pool.QueryRow(ctx, q, string(rol), id).Scan(&u.ID, &u.Nombre, &u.Email, &rolTexto, &u.EmailVerificado, &u.FechaCreacion)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Usuario{}, ErrNoEncontrado
+	}
+	if err != nil {
+		return domain.Usuario{}, err
+	}
+	u.Rol = domain.Rol(rolTexto)
+	return u, nil
+}
