@@ -72,6 +72,17 @@ func TestCalcularDesglosePorEje(t *testing.T) {
 	}
 }
 
+func TestObjetivoCiencias(t *testing.T) {
+	o := ObjetivoCiencias(80, EjeBiologia)
+	if o[EjeBiologia] != 44 || o[EjeFisica] != 18 || o[EjeQuimica] != 18 {
+		t.Fatalf("80 preguntas con electivo Biología deberían ser 44/18/18, obtuve %v", o)
+	}
+	o = ObjetivoCiencias(20, EjeQuimica)
+	if o[EjeBiologia]+o[EjeFisica]+o[EjeQuimica] != 20 || o[EjeQuimica] <= o[EjeFisica] {
+		t.Fatalf("reparto inválido para 20 preguntas: %v", o)
+	}
+}
+
 func TestElegirGruposExactos(t *testing.T) {
 	elegidos := ElegirGruposExactos(10, []int{6, 5, 4, 5})
 	suma := 0

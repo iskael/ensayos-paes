@@ -49,6 +49,7 @@ type crearEnsayoReq struct {
 	Ejes     []string `json:"ejes"`
 	Cantidad int      `json:"cantidad"`
 	Modo     string   `json:"modo"`
+	Electivo string   `json:"electivo"`
 }
 
 func (h *ensayoHandler) crear(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +85,18 @@ func (h *ensayoHandler) crear(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	detalle, err := h.ensayos.GenerarAleatorio(r.Context(), claims.UsuarioID, nivel, ejes, in.Cantidad, modo)
+	var objetivo map[domain.Eje]int
+	if in.Electivo != "" {
+		electivo := domain.Eje(in.Electivo)
+		if nivel != domain.NivelCiencias || !domain.EjePerteneceA(electivo, domain.NivelCiencias) {
+			escribirError(w, http.StatusUnprocessableEntity, "VALIDACION", "El módulo electivo solo existe en Ciencias (biologia, fisica o quimica)")
+			return
+		}
+		ejes = []domain.Eje{domain.EjeBiologia, domain.EjeFisica, domain.EjeQuimica}
+		objetivo = domain.ObjetivoCiencias(in.Cantidad, electivo)
+	}
+
+	detalle, err := h.ensayos.GenerarAleatorio(r.Context(), claims.UsuarioID, nivel, ejes, in.Cantidad, modo, objetivo)
 	if err != nil {
 		var stockErr *repo.StockInsuficienteError
 		if errors.As(err, &stockErr) {

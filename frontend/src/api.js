@@ -63,8 +63,8 @@ export const api = {
     pedir(`/api/v1/ensayos/${id}/respuestas`, { metodo: 'PATCH', body, token, signal }),
   enviarEnsayo: (token, id) => pedir(`/api/v1/ensayos/${id}/enviar`, { metodo: 'POST', token }),
   obtenerResultado: (token, id) => pedir(`/api/v1/ensayos/${id}/resultado`, { token }),
-  dashboardResumen: (token) => pedir('/api/v1/dashboard/resumen', { token }),
-  dashboardEvolucion: (token) => pedir('/api/v1/dashboard/evolucion', { token }),
+  dashboardResumen: (token, nivel) => pedir(`/api/v1/dashboard/resumen${nivel ? `?nivel=${nivel}` : ''}`, { token }),
+  dashboardEvolucion: (token, nivel) => pedir(`/api/v1/dashboard/evolucion${nivel ? `?nivel=${nivel}` : ''}`, { token }),
   crearExamen: (token, body) => pedir('/api/v1/examenes', { metodo: 'POST', body, token }),
   listarExamenes: (token, { limit, offset } = {}) => {
     const params = new URLSearchParams()
