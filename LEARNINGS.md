@@ -154,3 +154,11 @@ Registro de decisiones técnicas y aprendizajes del proyecto.
 
 - Los estímulos se editan en el banco (`/banco/textos`). Al guardar se marca `fecha_edicion`, y el SQL del generador hace `ON CONFLICT ... WHERE estimulos.fecha_edicion IS NULL`: una vez que alguien corrige un texto en la app, recargar `carga.sql` ya no lo pisa. Si hace falta que el generador vuelva a mandar, poner `fecha_edicion = NULL` en ese texto.
 - No se puede cambiar la prueba de un texto con preguntas ni borrarlo mientras tenga preguntas (409); una pregunta solo se asocia a un texto de su misma prueba.
+
+## Roles apoderado, institución y editor (2026-11-11)
+
+- **Consentimiento por código, siempre desde el lado observado:** el estudiante genera el código del apoderado (8 caracteres, 7 días, uno vigente por estudiante) y puede quitar al apoderado; el profesor ingresa el código de la institución y puede salir. Nadie se "agrega" a otro sin que el observado entregue algo.
+- El apoderado ve exactamente el dashboard del estudiante (`/pupilos/{id}/resumen|evolucion` reutilizan `resumenDe`/`evolucionDe`), nunca sus ensayos ni respuestas. Un estudiante no vinculado responde 404, no 403.
+- La institución ve grupos y resumen de miembros solo de los profesores con `usuarios.institucion_id` = la suya; al quitar al profesor deja de verlos al tiro.
+- Editor = rutas del banco (`RequerirRol(admin, editor)`) sin `/admin/*`. Solo lo asigna un admin desde **Usuarios**; nadie puede volverse admin por la API. El rol va en el JWT: el cambio se ve al volver a iniciar sesión.
+- `ALTER TYPE rol ADD VALUE` no se puede revertir: la migración down deja los valores del enum.

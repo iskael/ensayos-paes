@@ -94,6 +94,8 @@ export default function Registro() {
             <select id="rol" value={rol} onChange={(e) => setRol(e.target.value)}>
               <option value="estudiante">Estudiante</option>
               <option value="profesor">Profesor</option>
+              <option value="apoderado">Apoderado (sigo el avance de un estudiante)</option>
+              <option value="institucion">Institución (colegio o preuniversitario)</option>
             </select>
           </div>
           <div className="campo">

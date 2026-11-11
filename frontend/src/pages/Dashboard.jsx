@@ -10,7 +10,7 @@ function formatearFecha(fechaIso) {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-export default function Dashboard() {
+export default function Dashboard({ estudianteId, titulo = 'Mi progreso', volver }) {
   const { llamar } = useApi()
   const [resumen, setResumen] = useState(null)
   const [evolucion, setEvolucion] = useState(null)
@@ -20,8 +20,8 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelado = false
     Promise.all([
-      llamar((token) => api.dashboardResumen(token, nivel)),
-      llamar((token) => api.dashboardEvolucion(token, nivel)),
+      llamar((token) => (estudianteId ? api.pupiloResumen(token, estudianteId, nivel) : api.dashboardResumen(token, nivel))),
+      llamar((token) => (estudianteId ? api.pupiloEvolucion(token, estudianteId, nivel) : api.dashboardEvolucion(token, nivel))),
     ])
       .then(([r, e]) => {
         if (cancelado) return
@@ -34,7 +34,7 @@ export default function Dashboard() {
     return () => {
       cancelado = true
     }
-  }, [llamar, nivel])
+  }, [llamar, nivel, estudianteId])
 
   const filtros = (
     <div className="chips" style={{ margin: '4px 0 14px' }}>
@@ -62,13 +62,20 @@ export default function Dashboard() {
   if (resumen.total_ensayos === 0) {
     return (
       <div className="contenido">
-        <h1>Mi progreso</h1>
+        {volver}
+        <h1>{titulo}</h1>
         {filtros}
         <div className="panel vacio">
-          <p>{nivel ? 'Todavía no rendiste ensayos de esta prueba.' : 'Todavía no rendiste ningún ensayo.'}</p>
-          <Link to="/" className="boton">
-            Rendir mi primer ensayo
-          </Link>
+          {estudianteId ? (
+            <p>{nivel ? 'Aún no rinde ensayos de esta prueba.' : 'Aún no rinde ningún ensayo.'}</p>
+          ) : (
+            <>
+              <p>{nivel ? 'Todavía no rendiste ensayos de esta prueba.' : 'Todavía no rendiste ningún ensayo.'}</p>
+              <Link to="/" className="boton">
+                Rendir mi primer ensayo
+              </Link>
+            </>
+          )}
         </div>
       </div>
     )
@@ -86,7 +93,8 @@ export default function Dashboard() {
   return (
     <div className="contenido">
       <div>
-        <h1>Mi progreso</h1>
+        {volver}
+        <h1>{titulo}</h1>
         {filtros}
 
         <div className="dashboard-tarjetas">

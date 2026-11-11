@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError } from '../api.js'
 import { useApi } from '../useApi.js'
+import TarjetaInstitucionProfesor from '../components/TarjetaInstitucionProfesor.jsx'
 
 export default function MisGruposProfesor() {
   const { llamar } = useApi()
@@ -111,6 +112,7 @@ export default function MisGruposProfesor() {
           </table>
         )}
       </div>
+      <TarjetaInstitucionProfesor />
     </div>
   )
 }

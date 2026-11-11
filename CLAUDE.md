@@ -27,7 +27,7 @@ Plataforma web mobile-first de ensayos PAES de matemáticas (M1/M2). MVP bajo **
 - `peso_snapshot` se fija al generar el ensayo (editar el ítem no altera resultados históricos).
 - Ítems participan en ensayos solo si `estado = publicado`.
 - Suma de pesos publicados de un examen = 1000.
-- RBAC: estudiante ve solo lo suyo; profesor solo sus grupos; admin solo el banco.
+- RBAC: estudiante ve solo lo suyo; profesor solo sus grupos; admin el banco y los roles; editor solo el banco; apoderado solo el progreso (no las respuestas) de los estudiantes que le dieron su código; institución solo los grupos de los profesores que se unieron con su código.
 
 ## Interacción
 
