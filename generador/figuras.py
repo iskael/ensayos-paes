@@ -413,10 +413,10 @@ def poliomino(celdas):
     return l.svg()
 
 
-def grafico_de_barras(categorias, valores, titulo_x, titulo_y="Frecuencia"):
+def grafico_de_barras(categorias, valores, titulo_x, titulo_y="Frecuencia", alto=None):
     n, maximo = len(categorias), max(valores)
     paso = 2.0
-    alto = max(6.0, maximo * 0.5)
+    alto = alto if alto is not None else max(6.0, maximo * 0.5)
     l = Lienzo(-1.6, n * paso + 0.8, -1.9, alto + 1.4, ancho=360, margen=20)
     l.flecha((0, 0), (0, alto + 0.9), grosor=1.4)
     l.linea((0, 0), (n * paso + 0.4, 0), grosor=1.4)
@@ -564,4 +564,45 @@ def triangulo_con_angulo(base, altura, rotulo_base, rotulo_altura, rotulo_hipote
     l.texto((b / 2, 0), rotulo_base, dy=20)
     l.texto((b, h / 2), rotulo_altura, dx=8, dy=5, ancla="start")
     l.texto((b / 2, h / 2), rotulo_hipotenusa, dx=-10, dy=-6, ancla="end")
+    return l.svg()
+
+
+def triangulo_con_altura(base, altura, rotulo_base, rotulo_altura, desplazamiento=0.3):
+    """Triángulo no rectángulo con su altura punteada; `desplazamiento` ubica el vértice superior como fracción de la base."""
+    b, h = _proporcion(base, altura)
+    b, h = b * 10, h * 10
+    xv = b * desplazamiento
+    l = Lienzo(-1.2, b + 1.2, -1.6, h + 0.8)
+    l.poligono([(0, 0), (b, 0), (xv, h)], relleno=GRIS_CLARO)
+    l.linea((xv, 0), (xv, h), punteada=True, grosor=1.4)
+    l.angulo_recto((xv, 0), (b, 0), (xv, h), lado=9)
+    l.texto((b / 2, 0), rotulo_base, dy=20)
+    l.texto((xv, h / 2), rotulo_altura, dx=8, dy=5, ancla="start")
+    return l.svg()
+
+
+def recta_numerica(inicio, fin, divisiones, puntos, rotulos_enteros=True):
+    """Recta de `inicio` a `fin` (enteros) con `divisiones` marcas por unidad; puntos: lista de (valor, rótulo)."""
+    largo = fin - inicio
+    l = Lienzo(inicio - 0.5, fin + 0.5, -1.2, 1.0, ancho=360, margen=18)
+    l.linea((inicio - 0.4, 0), (fin + 0.4, 0), grosor=1.6)
+    for i in range(largo * divisiones + 1):
+        x = inicio + i / divisiones
+        entero = i % divisiones == 0
+        l.linea((x, -0.18 if entero else -0.1), (x, 0.18 if entero else 0.1), grosor=1.6 if entero else 1.1)
+        if entero and rotulos_enteros:
+            l.texto((x, 0), round(x), dy=30, tam=14)
+    for valor, rotulo in puntos:
+        l.punto((valor, 0), 4)
+        l.texto((valor, 0), rotulo, dy=-14, tam=15, cursiva=True)
+    return l.svg()
+
+
+def rectangulo_sombreado(columnas, filas, sombreadas):
+    """Rectángulo dividido en celdas iguales; sombreadas: conjunto de (columna, fila)."""
+    l = Lienzo(0, columnas, 0, filas, ancho=min(360, 44 * columnas + 24), margen=12)
+    for c in range(columnas):
+        for f in range(filas):
+            relleno = GRIS if (c, f) in sombreadas else "#ffffff"
+            l.poligono([(c, f), (c + 1, f), (c + 1, f + 1), (c, f + 1)], relleno=relleno, grosor=1.3)
     return l.svg()
